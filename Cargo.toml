@@ -1,0 +1,7 @@
+[package]
+name = "dstream"
+version = "0.0.1"
+authors = [ "Octavian Geagla <ogeagla@gmail.com>" ]
+
+[dependencies]
+nalgebra = "*"
