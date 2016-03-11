@@ -2,12 +2,53 @@ use na::*;
 use std::num::*;
 mod test;
 
-pub trait GridSpace {
-    fn update_grid_pt_density(&mut self, val_to_add: (f64, f64), current_time: u32) -> Result<(), String>;
+#[test]
+fn test_initialize_clustering() {
+    const loc_i: usize = 0 as usize;
+    const loc_j: usize = 0 as usize;
+    const G1: GridPoint = GridPoint
+    {i: loc_i, j: loc_j,
+        density: 0.0, new_data_time: 0, last_data_time: 0,
+        last_density: 0.0};
+    let result = initialize_clustering(Mat2::new(G1, G1, G1, G1));
+    assert_eq!(Ok(()), result);
+}
 
-    fn compute_decay_factor_at_time(&self, t_n: u32, t_l: u32) -> f64 {
-        LAMBDA.powf((t_n - t_l) as f64)
+#[test]
+fn test_which_grid() {
+    let val = (3.1, 1.1);
+    let i_rn = (0.0, 10.0);
+    let j_rn = (-2.0, 2.0);
+    let i_bins = 10 as usize;
+    let j_bins = 4 as usize;
+
+    let result = GridHelpers::which_grid(val, i_rn, j_rn, i_bins, j_bins).unwrap();
+    assert_eq!(3, result.0);
+    assert_eq!(3, result.1);
+}
+
+mod GridHelpers {
+    pub fn which_grid(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
+        let i_size = (i_range.1 - i_range.0) / i_bins as f64;
+        let i_number_of_sizes = ((val.0 - i_range.0) / i_size) as usize;
+        let j_size = (j_range.1 - j_range.0) / j_bins as f64;
+        let j_number_of_sizes = ((val.1 - j_range.0) / j_size) as usize;
+
+        assert!(i_number_of_sizes < i_bins);
+        assert!(j_number_of_sizes < j_bins);
+
+
+        Ok((i_number_of_sizes, j_number_of_sizes))
     }
+}
+
+pub trait GridSpace {
+    fn update_grid_pt_density(&mut self, val_to_add: (f64, f64), current_time: u32, lambda: f64) -> Result<(), String>;
+
+    fn compute_decay_factor_at_time(&self, t_n: u32, t_l: u32, lambda: f64) -> f64 {
+        lambda.powf((t_n - t_l) as f64)
+    }
+
 }
 
 pub struct GridPoint {
@@ -17,14 +58,24 @@ pub struct GridPoint {
     last_density: f64,
     new_data_time: u32,
     last_data_time: u32,
+}
 
+pub struct DStreamProps {
+    c_m: f64,
+    c_l: f64,
+    lambda: f64,
+    beta: f64,
+    i_bins: usize,
+    j_bins: usize,
+    i_range: (f64, f64),
+    j_range: (f64, f64),
 }
 
 impl GridSpace for GridPoint {
 
     //TODO
-    fn update_grid_pt_density(&mut self, val_to_add: (f64, f64), current_time: u32) -> Result<(), String> {
-        let coeff = self.compute_decay_factor_at_time(self.new_data_time, self.last_data_time);
+    fn update_grid_pt_density(&mut self, val_to_add: (f64, f64), current_time: u32, lambda: f64) -> Result<(), String> {
+        let coeff = self.compute_decay_factor_at_time(self.new_data_time, self.last_data_time, lambda);
         let new_density = coeff * self.last_density + 1.0;
 
         self.last_density = self.density;
@@ -36,12 +87,6 @@ impl GridSpace for GridPoint {
         Ok(())
     }
 }
-
-const C_M: f64     = 3.0;
-const C_L: f64     = 0.8;
-const LAMBDA: f64  = 0.998;
-const BETA: f64    = 0.3;
-
 
 pub fn initialize_clustering(grid_list: Mat2<GridPoint>) -> Result<(), String> {
     //update density of all grids in grid_list
@@ -59,18 +104,6 @@ pub fn initialize_clustering(grid_list: Mat2<GridPoint>) -> Result<(), String> {
     end do
     */
     Ok(())
-}
-
-#[test]
-fn initialize_clusters() {
-    const loc_i: usize = 0 as usize;
-    const loc_j: usize = 0 as usize;
-    const G1: GridPoint = GridPoint
-                {i: loc_i, j: loc_j,
-                    density: 0.0, new_data_time: 0, last_data_time: 0,
-                    last_density: 0.0};
-    let result = initialize_clustering(Mat2::new(G1, G1, G1, G1));
-    assert_eq!(Ok(()), result);
 }
 
 
