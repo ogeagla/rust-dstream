@@ -1,4 +1,5 @@
 use na::*;
+use std::num::*;
 mod test;
 
 pub struct Grid {
@@ -10,6 +11,10 @@ const C_M: f64     = 3.0;
 const C_L: f64     = 0.8;
 const LAMBDA: f64  = 0.998;
 const BETA: f64    = 0.3;
+
+fn compute_density_coeff_at_time(timestamp: u32, current_time: u32) -> f64 {
+    LAMBDA.powf((current_time - timestamp) as f64)
+}
 
 pub fn initialize_clustering(grid_list: Mat2<Grid>) -> Result<(), String> {
     //update density of all grids in grid_list

@@ -5,3 +5,4 @@ authors = [ "Octavian Geagla <ogeagla@gmail.com>" ]
 
 [dependencies]
 nalgebra = "0.5.1"
+num = "0.1.31"
