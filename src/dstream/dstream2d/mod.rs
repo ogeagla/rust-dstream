@@ -1,6 +1,8 @@
 use na::{Mat2, DMat};
-//use na;
+use std::collections::HashMap;
 use std::num::*;
+use itertools::Itertools;
+
 mod test;
 
 #[test]
@@ -46,6 +48,31 @@ pub trait DensityGridSpace {
 
 }
 
+impl Default for DStreamProps {
+    fn default() -> DStreamProps {
+        DStreamProps {
+            c_m: 3.0,
+            c_l: 0.8,
+            lambda: 0.998,
+            beta: 0.3,
+            i_bins: 10 as usize,
+            j_bins: 10 as usize,
+            i_range: (-10.0, 10.0),
+            j_range: (-10.0, 10.0),
+        }
+    }
+}
+pub struct DStreamProps {
+    c_m: f64,
+    c_l: f64,
+    lambda: f64,
+    beta: f64,
+    i_bins: usize,
+    j_bins: usize,
+    i_range: (f64, f64),
+    j_range: (f64, f64),
+}
+
 /*
 
 input data: [(x, y, v)]
@@ -63,27 +90,81 @@ fn put (t, [(x, y, v)]):
     g.update(t, sum_vals)
     print g.get()
 */
+
+#[derive(Clone)]
 struct RawData {
     x: f64,
     y: f64,
-    v: f64
+    v: f64,
 }
-struct TheWorld;
+#[derive(Clone)]
+struct GridData {
+    i: usize,
+    j: usize,
+    v: f64,
+}
+struct TheWorld {
+    gs: HashMap<(usize, usize), DG>,
+}
 impl TheWorld {
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
-    fn put(t: u32, dat: Vec<RawData>) -> Result<(), String> {Ok(())}
-    fn which_idxs(dat: RawData) -> Result<(usize, usize), String> {Ok((0,0))}
+    fn put(&self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
+
+        let with_idxs: Vec<GridData> = dat
+            .iter()
+            .map(|rd| self.which_idxs(rd).unwrap())
+            .collect();
+
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+
+        for (key, group) in with_idxs.iter().group_by(|gd| (gd.i, gd.j)) {
+            println!("key, g size: {}{} : {}", key.0, key.1, group.len());
+
+            let some_default_dg = &DG {i: key.0, j: key.1, updates_and_vals: Vec::new()};
+            let the_dg = match self.gs.get(&key) {
+                Some(dg) => dg,
+                None => some_default_dg
+            };
+
+//            let the_vec_of_vals =
+
+//            the_dg.update(t,)
+        }
+
+        Ok(())
+    }
+    fn which_idxs(&self, dat: &RawData) -> Result<GridData, String> {Ok((GridData{i:1,j:1,v:0.1}))}
 }
 struct DG {
     i: usize,
     j: usize,
-    density: f64,
-    last_update: u32,
+    updates_and_vals: Vec<(u32, f64)>,
 }
 impl DG {
-    fn update(t: u32, vals: Vec<f64>) {}
-}
+    fn get_at_time(&self, t: u32) -> f64 {
+        let last_update_time_and_value = self.get_last_update_and_value_to(t);
+        let coeff = self.coeff(t, last_update_time_and_value.0);
+        let d = coeff * last_update_time_and_value.1 + 1.0;
+
+        d
+    }
+    fn update(&mut self, t: u32, vals: Vec<f64>) {
+        let sum = vals.iter().fold(0.0, |sum, x| sum + x);
+        self.updates_and_vals.push((t, sum));
+    }
+
+    fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
+        //TODO
+        (1, 123.232)
+    }
+
+    fn coeff(&self, t_n: u32, t_l: u32) -> f64 {
+        //TODO
+        100.0343
+    }
+
+ }
 
 
 
@@ -105,36 +186,12 @@ pub struct Dat {
     t: u32,
 }
 
-pub struct DStreamProps {
-    c_m: f64,
-    c_l: f64,
-    lambda: f64,
-    beta: f64,
-    i_bins: usize,
-    j_bins: usize,
-    i_range: (f64, f64),
-    j_range: (f64, f64),
-}
+
 
 pub struct TheGrid {
     mat: DMat<GridPoint>,
     props: DStreamProps,
     dats: Vec<((usize, usize), Dat)>,
-}
-
-impl Default for DStreamProps {
-    fn default() -> DStreamProps {
-        DStreamProps {
-            c_m: 3.0,
-            c_l: 0.8,
-            lambda: 0.998,
-            beta: 0.3,
-            i_bins: 10 as usize,
-            j_bins: 10 as usize,
-            i_range: (-10.0, 10.0),
-            j_range: (-10.0, 10.0),
-        }
-    }
 }
 
 impl DensityGrid for GridPoint {
