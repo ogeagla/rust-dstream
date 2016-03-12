@@ -33,14 +33,16 @@ mod grid_helpers {
 
 pub trait DensityGrid {
 
-    fn compute_decay_factor_at_time(&self, t_n: u32, t_l: u32, lambda: f64) -> f64 {
+    fn get_value_at_time(&self, time: u32, lambda: f64, dats: Vec<((usize,usize),Dat)>) -> Result<f64, String>;
+
+    fn compute_decay_coeff_at_time(&self, t_n: u32, t_l: u32, lambda: f64) -> f64 {
         lambda.powf((t_n - t_l) as f64)
     }
 }
 
 pub trait DensityGridSpace {
 
-    fn put(&mut self, loc2d: (f64, f64), val: f64) -> Result<(), String>;
+    fn put(&mut self, loc2d: (f64, f64), val: f64, t: u32) -> Result<(), String>;
 
 }
 
@@ -51,9 +53,15 @@ pub struct GridPoint {
     i: usize, //location
     j: usize,
     density: f64,
-    last_density: f64,
-    new_data_time: u32,
-    last_data_time: u32,
+    data_time: u32,
+}
+
+#[derive(Clone)]
+pub struct Dat {
+    x: f64,
+    y: f64,
+    val: f64,
+    t: u32,
 }
 
 pub struct DStreamProps {
@@ -70,6 +78,7 @@ pub struct DStreamProps {
 pub struct TheGrid {
     mat: DMat<GridPoint>,
     props: DStreamProps,
+    dats: Vec<((usize, usize), Dat)>,
 }
 
 impl Default for DStreamProps {
@@ -89,11 +98,37 @@ impl Default for DStreamProps {
 
 impl DensityGrid for GridPoint {
 
+    fn get_value_at_time(&self, time: u32, lambda: f64, dats: Vec<((usize,usize),Dat)>) -> Result<f64, String> {
+
+        //TODO time - 1 is wrong, it should be biggest time smaller than current
+        let coeff = self.compute_decay_coeff_at_time(time, time - 5, lambda);
+
+        let sum_vals = dats.iter().fold(0.0, |sum, x| sum + x.1.val);
+        println!("sum vals: {}", sum_vals);
+        let new_d = coeff * sum_vals + 1.0;
+        println!("new D: {}", new_d);
+
+        Ok(new_d)
+    }
+
+//    fn update_with_values(&mut self, vals: &[f64], current_time: u32, lambda: f64) -> Result<(), String> {
+//        //        D(g, t n ) = λ t n −t l D(g, t l ) + 1
+//        let coeff = self.compute_decay_coeff_at_time(current_time, self.data_time, lambda);
+//        println!("coeff: {}", coeff);
+//        let sum_vals = vals.iter().fold(0.0, |sum, x| sum + x);
+//        let new_d = coeff * coeff * sum_vals + 1.0;
+//        println!("sum vals: {}", sum_vals);
+//        println!("new D: {}", new_d);
+//        self.density = new_d;
+//        self.data_time = current_time;
+//        Ok(())
+//    }
+
 }
 
 impl DensityGridSpace for TheGrid {
 
-    fn put(&mut self, loc2d: (f64, f64), val: f64) -> Result<(), String> {
+    fn put(&mut self, loc2d: (f64, f64), val: f64, t: u32) -> Result<(), String> {
 
 //        println!("{}", self.density);
 //        let props: DStreamProps = DStreamProps { ..Default::default() };
@@ -101,11 +136,33 @@ impl DensityGridSpace for TheGrid {
 //        let res_update = self.update_grid_pt_density(val, 0, props.lambda);
 //        println!("{}", self.density);
 
-        if ((loc2d.0 <= self.props.i_range.1) && (loc2d.0 >= self.props.i_range.0) && (loc2d.1 <= self.props.j_range.1) && (loc2d.1 >= self.props.j_range.0)) {
-            println!("valid!");
-            let idxs = grid_helpers::which_grid(loc2d, self.props.i_range, self.props.j_range, self.props.i_bins, self.props.j_bins).unwrap();
-            let gp = &self.mat[idxs];
 
+        if ((loc2d.0 <= self.props.i_range.1) &&
+            (loc2d.0 >= self.props.i_range.0) &&
+            (loc2d.1 <= self.props.j_range.1) &&
+            (loc2d.1 >= self.props.j_range.0)) {
+
+            println!("valid!");
+            let idxs =
+                grid_helpers::which_grid(loc2d, self.props.i_range, self.props.j_range,
+                                         self.props.i_bins, self.props.j_bins).unwrap();
+            let gp = &mut self.mat[idxs];
+
+//            gp.update_with_values(&[100.0], t, self.props.lambda);
+
+            self.dats.push((idxs, Dat {x: loc2d.0, y: loc2d.1, val: val, t:t}));
+
+            println!("value at next time: {}",
+                gp.get_value_at_time(
+                    t+10,
+                    self.props.lambda,
+                        self.dats
+                            .clone()
+                            .into_iter()
+                            .filter(|i| i.0 == idxs)
+                            .collect::<Vec<((usize, usize), Dat)>>()).unwrap());
+
+            println!("dats len: {}", self.dats.len());
 
             Ok(())
         } else {
@@ -118,20 +175,16 @@ impl DensityGridSpace for TheGrid {
 fn test_put() {
 
     let mut grid_pt_1: GridPoint = GridPoint {i: 0, j: 0,
-        density: 0.0, new_data_time: 0, last_data_time: 0,
-        last_density: 0.0};
+        density: 0.0, data_time: 0,};
 
     let mut grid_pt_2: GridPoint = GridPoint {i: 1, j: 0,
-        density: 0.0, new_data_time: 0, last_data_time: 0,
-        last_density: 0.0};
+        density: 0.0, data_time: 0, };
 
     let mut grid_pt_3: GridPoint = GridPoint {i: 0, j: 1,
-        density: 0.0, new_data_time: 0, last_data_time: 0,
-        last_density: 0.0};
+        density: 0.0, data_time: 0, };
 
     let mut grid_pt_4: GridPoint = GridPoint {i: 1, j: 1,
-        density: 0.0, new_data_time: 0, last_data_time: 0,
-        last_density: 0.0};
+        density: 0.0, data_time: 0,};
 
     let mut v = Vec::new();
     for i in 0..100 {
@@ -150,20 +203,23 @@ fn test_put() {
 
             let mut g1= GridPoint
             {i: i, j: j,
-                density: 0.0, new_data_time: 0, last_data_time: 0,
-                last_density: 0.0};
+                density: 0.0, data_time: 0, };
 
             mat_thing[(i,j)] = g1;
         }
 
     }
 
-    let mut the_grid = TheGrid {mat: mat_thing, props: DStreamProps { ..Default::default() }};
+    let mut the_grid = TheGrid {mat: mat_thing, props: DStreamProps { ..Default::default() }, dats: Vec::new()};
 
-    let res_put = the_grid.put((-6.0, 6.0), 100.0).unwrap();
+    let res_put = the_grid.put((-6.0, 6.0), 100.0, 1).unwrap();
+    let res_put = the_grid.put((-6.0, 6.0), 100.0, 10).unwrap();
+    let res_put = the_grid.put((-6.0, 6.0), 100.0, 100).unwrap();
+    let res_put = the_grid.put((-6.0, 6.0), 100.0, 1000).unwrap();
+    let res_put = the_grid.put((-6.0, 6.0), 100.0, 10000).unwrap();
+
 
     for i in 0..10 {
-
         for j in 0..10 {
             let gp: &GridPoint = &the_grid.mat[(i as usize, j as usize)];
             assert_eq!(0.0, gp.density)
@@ -177,8 +233,7 @@ fn test_initialize_clustering() {
     const loc_j: usize = 0 as usize;
     const G1: GridPoint = GridPoint
     {i: loc_i, j: loc_j,
-        density: 0.0, new_data_time: 0, last_data_time: 0,
-        last_density: 0.0};
+        density: 0.0, data_time: 0, };
     let result = initialize_clustering(DMat::from_row_vec(2,2, &[G1, G1, G1, G1]));
     assert_eq!(Ok(()), result);
 }
