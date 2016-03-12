@@ -2,6 +2,8 @@ use na::{Mat2, DMat};
 use std::collections::HashMap;
 use std::num::*;
 use itertools::Itertools;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 mod test;
 
@@ -118,24 +120,48 @@ impl TheWorld {
 
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
+        let mut keys_and_vals = Vec::new();
+
         for (key, group) in with_idxs.iter().group_by(|gd| (gd.i, gd.j)) {
             println!("key, g size: {}{} : {}", key.0, key.1, group.len());
 
-            let some_default_dg = &DG {i: key.0, j: key.1, updates_and_vals: Vec::new()};
-            let the_dg = match self.gs.get(&key) {
-                Some(dg) => dg,
+            let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
+
+            keys_and_vals.push((key, the_vec_of_vals));
+
+//            let the_dg = match self.gs.get(&key) {
+//                Some(dg) => dg.update(t, the_vec_of_vals),
+//                None => some_default_dg.update(t, the_vec_of_vals)
+//            };
+
+        }
+
+        let some_default_dg = &DG {i: 0, j: 0, updates_and_vals: Vec::new()};
+
+        let shared_map: Rc<RefCell<_>> = Rc::new(RefCell::new(HashMap::new()));
+
+        for kv in keys_and_vals.iter() {
+            let a = match self.gs.get(&kv.0) {
+                Some(dg) => some_default_dg ,
                 None => some_default_dg
             };
-
-//            let the_vec_of_vals =
-
-//            the_dg.update(t,)
+            shared_map.borrow_mut().insert(kv.0, a);
         }
+
+//        shared_map.borrow_mut().insert("africa", 92388);
+//        shared_map.borrow_mut()["asd"] = 232;
+//        shared_map.borrow_mut().insert("africa", 999992388);
+//        shared_map.borrow_mut().insert("kyoto", 11837);
+//        shared_map.borrow_mut().insert("piccadilly", 11826);
+//        shared_map.borrow_mut().insert("marbles", 38);
+//        assert!(shared_map.borrow_mut().len() == 4);
+
 
         Ok(())
     }
     fn which_idxs(&self, dat: &RawData) -> Result<GridData, String> {Ok((GridData{i:1,j:1,v:0.1}))}
 }
+#[derive(Clone)]
 struct DG {
     i: usize,
     j: usize,
@@ -149,7 +175,7 @@ impl DG {
 
         d
     }
-    fn update(&mut self, t: u32, vals: Vec<f64>) {
+    fn update(mut self, t: u32, vals: Vec<f64>) {
         let sum = vals.iter().fold(0.0, |sum, x| sum + x);
         self.updates_and_vals.push((t, sum));
     }
