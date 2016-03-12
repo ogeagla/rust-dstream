@@ -46,6 +46,38 @@ pub trait DensityGridSpace {
 
 }
 
+/*
+
+input data: [(x, y, v)]
+
+///some impl
+for some time t in 0..:
+  _.put t, [(x, y, v)]
+
+
+//some other impl
+fn put (t, [(x, y, v)]):
+  [(i, j, sum_vals)] = [x,y,v].map(i,j,v).groupby(i,j).reduce(_+_)
+  foreach:
+    g = density_grids[i, j]
+    g.update(t, v)
+    print g.get()
+*/
+struct RawData;
+struct TheWorld;
+impl TheWorld {
+    fn do_time_steps() {}
+    fn do_one_time_step() {}
+    fn put() {}
+}
+struct DG;
+impl DG {
+    fn update() {}
+    fn get() {}
+}
+
+
+
 #[derive(Debug)]
 #[derive(Copy)]
 #[derive(Clone)]
