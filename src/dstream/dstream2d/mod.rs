@@ -1,33 +1,22 @@
-use na::*;
+use na::{Mat2, DMat};
+//use na;
 use std::num::*;
 mod test;
 
 #[test]
-fn test_initialize_clustering() {
-    const loc_i: usize = 0 as usize;
-    const loc_j: usize = 0 as usize;
-    const G1: GridPoint = GridPoint
-    {i: loc_i, j: loc_j,
-        density: 0.0, new_data_time: 0, last_data_time: 0,
-        last_density: 0.0};
-    let result = initialize_clustering(Mat2::new(G1, G1, G1, G1));
-    assert_eq!(Ok(()), result);
-}
-
-#[test]
 fn test_which_grid() {
-    let val = (3.1, 1.1);
-    let i_rn = (0.0, 10.0);
-    let j_rn = (-2.0, 2.0);
+    let loc = (-6., 6.);
+    let i_rn = (-10.0, 10.0);
+    let j_rn = (-10.0, 10.0);
     let i_bins = 10 as usize;
-    let j_bins = 4 as usize;
+    let j_bins = 10 as usize;
 
-    let result = GridHelpers::which_grid(val, i_rn, j_rn, i_bins, j_bins).unwrap();
-    assert_eq!(3, result.0);
-    assert_eq!(3, result.1);
+    let result = grid_helpers::which_grid(loc, i_rn, j_rn, i_bins, j_bins).unwrap();
+    assert_eq!((2, 8), result);
+
 }
 
-mod GridHelpers {
+mod grid_helpers {
     pub fn which_grid(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
         let i_size = (i_range.1 - i_range.0) / i_bins as f64;
         let i_number_of_sizes = ((val.0 - i_range.0) / i_size) as usize;
@@ -42,17 +31,24 @@ mod GridHelpers {
     }
 }
 
-pub trait GridSpace {
-    fn update_grid_pt_density(&mut self, val_to_add: (f64, f64), current_time: u32, lambda: f64) -> Result<(), String>;
+pub trait DensityGrid {
 
     fn compute_decay_factor_at_time(&self, t_n: u32, t_l: u32, lambda: f64) -> f64 {
         lambda.powf((t_n - t_l) as f64)
     }
+}
+
+pub trait DensityGridSpace {
+
+    fn put(&mut self, loc2d: (f64, f64), val: f64) -> Result<(), String>;
 
 }
 
+#[derive(Debug)]
+#[derive(Copy)]
+#[derive(Clone)]
 pub struct GridPoint {
-    i: usize,
+    i: usize, //location
     j: usize,
     density: f64,
     last_density: f64,
@@ -71,24 +67,123 @@ pub struct DStreamProps {
     j_range: (f64, f64),
 }
 
-impl GridSpace for GridPoint {
+pub struct TheGrid {
+    mat: DMat<GridPoint>,
+    props: DStreamProps,
+}
 
-    //TODO
-    fn update_grid_pt_density(&mut self, val_to_add: (f64, f64), current_time: u32, lambda: f64) -> Result<(), String> {
-        let coeff = self.compute_decay_factor_at_time(self.new_data_time, self.last_data_time, lambda);
-        let new_density = coeff * self.last_density + 1.0;
-
-        self.last_density = self.density;
-        self.density = new_density;
-
-        self.last_data_time = self.new_data_time;
-        self.new_data_time = current_time;
-
-        Ok(())
+impl Default for DStreamProps {
+    fn default() -> DStreamProps {
+        DStreamProps {
+            c_m: 3.0,
+            c_l: 0.8,
+            lambda: 0.998,
+            beta: 0.3,
+            i_bins: 10 as usize,
+            j_bins: 10 as usize,
+            i_range: (-10.0, 10.0),
+            j_range: (-10.0, 10.0),
+        }
     }
 }
 
-pub fn initialize_clustering(grid_list: Mat2<GridPoint>) -> Result<(), String> {
+impl DensityGrid for GridPoint {
+
+}
+
+impl DensityGridSpace for TheGrid {
+
+    fn put(&mut self, loc2d: (f64, f64), val: f64) -> Result<(), String> {
+
+//        println!("{}", self.density);
+//        let props: DStreamProps = DStreamProps { ..Default::default() };
+//        let idxs = grid_helpers::which_grid(val, props.i_range, props.j_range, props.i_bins, props.j_bins);
+//        let res_update = self.update_grid_pt_density(val, 0, props.lambda);
+//        println!("{}", self.density);
+
+        if ((loc2d.0 <= self.props.i_range.1) && (loc2d.0 >= self.props.i_range.0) && (loc2d.1 <= self.props.j_range.1) && (loc2d.1 >= self.props.j_range.0)) {
+            println!("valid!");
+            let idxs = grid_helpers::which_grid(loc2d, self.props.i_range, self.props.j_range, self.props.i_bins, self.props.j_bins).unwrap();
+            let gp = &self.mat[idxs];
+
+
+            Ok(())
+        } else {
+            println!("invalid");
+            Err(String::from("Invalid range"))
+        }
+    }
+}
+#[test]
+fn test_put() {
+
+    let mut grid_pt_1: GridPoint = GridPoint {i: 0, j: 0,
+        density: 0.0, new_data_time: 0, last_data_time: 0,
+        last_density: 0.0};
+
+    let mut grid_pt_2: GridPoint = GridPoint {i: 1, j: 0,
+        density: 0.0, new_data_time: 0, last_data_time: 0,
+        last_density: 0.0};
+
+    let mut grid_pt_3: GridPoint = GridPoint {i: 0, j: 1,
+        density: 0.0, new_data_time: 0, last_data_time: 0,
+        last_density: 0.0};
+
+    let mut grid_pt_4: GridPoint = GridPoint {i: 1, j: 1,
+        density: 0.0, new_data_time: 0, last_data_time: 0,
+        last_density: 0.0};
+
+    let mut v = Vec::new();
+    for i in 0..100 {
+        v.push(grid_pt_1)
+    }
+
+    let mut mat_thing = DMat::from_col_vec(
+        10,
+        10,
+        &v
+    );
+
+    for i in 0..10 {
+
+        for j in 0..10 {
+
+            let mut g1= GridPoint
+            {i: i, j: j,
+                density: 0.0, new_data_time: 0, last_data_time: 0,
+                last_density: 0.0};
+
+            mat_thing[(i,j)] = g1;
+        }
+
+    }
+
+    let mut the_grid = TheGrid {mat: mat_thing, props: DStreamProps { ..Default::default() }};
+
+    let res_put = the_grid.put((-6.0, 6.0), 100.0).unwrap();
+
+    for i in 0..10 {
+
+        for j in 0..10 {
+            let gp: &GridPoint = &the_grid.mat[(i as usize, j as usize)];
+            assert_eq!(0.0, gp.density)
+        }
+    }
+}
+
+#[test]
+fn test_initialize_clustering() {
+    const loc_i: usize = 0 as usize;
+    const loc_j: usize = 0 as usize;
+    const G1: GridPoint = GridPoint
+    {i: loc_i, j: loc_j,
+        density: 0.0, new_data_time: 0, last_data_time: 0,
+        last_density: 0.0};
+    let result = initialize_clustering(DMat::from_row_vec(2,2, &[G1, G1, G1, G1]));
+    assert_eq!(Ok(()), result);
+}
+
+pub fn initialize_clustering(grid_list: DMat<GridPoint>) -> Result<(), String> {
     //update density of all grids in grid_list
     //assign each dense grid to a distinct cluster
     //label all other grids as NO_CLASS; bad grids!
@@ -107,7 +202,7 @@ pub fn initialize_clustering(grid_list: Mat2<GridPoint>) -> Result<(), String> {
 }
 
 
-pub fn adjust_clustering(grid_list: Mat2<GridPoint>) -> Result<(), String> {
+pub fn adjust_clustering(grid_list: DMat<GridPoint>) -> Result<(), String> {
     //update the density of all grids in grid_list
     /*
     foreach grid g whose attribute (dense/sparse/transitional) is changed since last call to adjust_clustering()
