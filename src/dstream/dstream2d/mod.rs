@@ -60,20 +60,29 @@ fn put (t, [(x, y, v)]):
   [(i, j, sum_vals)] = [x,y,v].map(i,j,v).groupby(i,j).reduce(_+_)
   foreach:
     g = density_grids[i, j]
-    g.update(t, v)
+    g.update(t, sum_vals)
     print g.get()
 */
-struct RawData;
+struct RawData {
+    x: f64,
+    y: f64,
+    v: f64
+}
 struct TheWorld;
 impl TheWorld {
     fn do_time_steps() {}
-    fn do_one_time_step() {}
-    fn put() {}
+    fn do_one_time_step(t: u32, data: Vec<RawData>) {}
+    fn put(t: u32, dat: Vec<RawData>) -> Result<(), String> {Ok(())}
+    fn which_idxs(dat: RawData) -> Result<(usize, usize), String> {Ok((0,0))}
 }
-struct DG;
+struct DG {
+    i: usize,
+    j: usize,
+    density: f64,
+    last_update: u32,
+}
 impl DG {
-    fn update() {}
-    fn get() {}
+    fn update(t: u32, vals: Vec<f64>) {}
 }
 
 
