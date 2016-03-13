@@ -108,7 +108,45 @@ struct GridData {
 struct TheWorld {
     gs: HashMap<(usize, usize), DG>,
 }
+
+#[test]
+fn test_new_put_works() {
+    let raw_data_1 = RawData{x: 1.0, y: -1.0, v: 123.45};
+    let raw_data_2 = RawData{x: 5.0, y: -7.0, v: 23.45};
+    let raw_data_3 = RawData{x: 5.0, y: -7.0, v: 83.45};
+
+    let rd_vec = vec!(raw_data_1, raw_data_2, raw_data_3);
+
+    let t = 1;
+
+    let world = TheWorld{gs: HashMap::new()};
+    world.init();
+    let res = world.put(t, rd_vec);
+
+
+}
+
 impl TheWorld {
+    fn init(&self) {
+        println!("init");
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+
+        let some_default_dg = &DG {i: 0, j: 0, updates_and_vals: Vec::new()};
+
+
+
+        let shared_map: Rc<RefCell<_>> = Rc::new(RefCell::new(HashMap::new()));
+
+
+
+
+
+        for i in 0..props.i_bins {
+            for j in 0..props.j_bins {
+                shared_map.borrow_mut().insert((i as usize, j as usize), some_default_dg);
+            }
+        }
+    }
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
     fn put(&self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
@@ -141,11 +179,11 @@ impl TheWorld {
         let shared_map: Rc<RefCell<_>> = Rc::new(RefCell::new(HashMap::new()));
 
         for kv in keys_and_vals.iter() {
-            let a = match self.gs.get(&kv.0) {
-                Some(dg) => some_default_dg ,
+            let dg_to_add = match self.gs.get(&kv.0) {
+                Some(dg) => dg ,
                 None => some_default_dg
             };
-            shared_map.borrow_mut().insert(kv.0, a);
+            shared_map.borrow_mut().insert(kv.0, dg_to_add);
         }
 
 //        shared_map.borrow_mut().insert("africa", 92388);
