@@ -107,6 +107,7 @@ struct GridData {
 }
 struct TheWorld {
     gs: HashMap<(usize, usize), DG>,
+    g_map: Rc<RefCell<HashMap<(usize, usize), DG>>>,
 }
 
 #[test]
@@ -119,7 +120,7 @@ fn test_new_put_works() {
 
     let t = 1;
 
-    let world = TheWorld{gs: HashMap::new()};
+    let world = TheWorld{gs: HashMap::new(), g_map: Rc::new(RefCell::new(HashMap::new()))};
     world.init();
     let res = world.put(t, rd_vec);
 
@@ -131,19 +132,11 @@ impl TheWorld {
         println!("init");
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        let some_default_dg = &DG {i: 0, j: 0, updates_and_vals: Vec::new()};
-
-
-
-        let shared_map: Rc<RefCell<_>> = Rc::new(RefCell::new(HashMap::new()));
-
-
-
-
+        let some_default_dg = DG {i: 0, j: 0, updates_and_vals: Vec::new()};
 
         for i in 0..props.i_bins {
             for j in 0..props.j_bins {
-                shared_map.borrow_mut().insert((i as usize, j as usize), some_default_dg);
+                self.g_map.borrow_mut().insert((i as usize, j as usize), some_default_dg.clone());
             }
         }
     }
@@ -176,14 +169,12 @@ impl TheWorld {
 
         let some_default_dg = &DG {i: 0, j: 0, updates_and_vals: Vec::new()};
 
-        let shared_map: Rc<RefCell<_>> = Rc::new(RefCell::new(HashMap::new()));
-
         for kv in keys_and_vals.iter() {
             let dg_to_add = match self.gs.get(&kv.0) {
                 Some(dg) => dg ,
                 None => some_default_dg
             };
-            shared_map.borrow_mut().insert(kv.0, dg_to_add);
+            self.g_map.borrow_mut().insert(kv.0, dg_to_add.clone());
         }
 
 //        shared_map.borrow_mut().insert("africa", 92388);
@@ -200,6 +191,7 @@ impl TheWorld {
     fn which_idxs(&self, dat: &RawData) -> Result<GridData, String> {Ok((GridData{i:1,j:1,v:0.1}))}
 }
 #[derive(Clone)]
+#[derive(Debug)]
 struct DG {
     i: usize,
     j: usize,
