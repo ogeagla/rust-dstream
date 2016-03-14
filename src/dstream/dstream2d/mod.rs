@@ -99,15 +99,22 @@ struct RawData {
     y: f64,
     v: f64,
 }
+
+#[derive(Clone)]
+#[derive(Debug)]
+struct BucketPoint {
+    t: u32,
+    v: f64,
+}
 #[derive(Clone)]
 struct GridData {
     i: usize,
     j: usize,
     v: f64,
 }
-struct TheWorld {
+struct TheWorld<'a> {
 //    gs: HashMap<(usize, usize), DG>,
-    g_map: Rc<RefCell<HashMap<(usize, usize), DG>>>,
+    g_map: Rc<RefCell<HashMap<(usize, usize), DG<'a>>>>,
 }
 
 #[test]
@@ -120,23 +127,25 @@ fn test_new_put_works() {
 
     let t = 1;
 
+    let default_vec : &'static mut Vec<BucketPoint> = &mut Vec::new();
     let world = TheWorld{g_map: Rc::new(RefCell::new(HashMap::new()))};
-    world.init();
+    world.init(default_vec);
     let res = world.put(t, rd_vec);
 
 
 }
 
-impl TheWorld {
-    fn init(&self) {
+impl<'a> TheWorld<'a> {
+    fn init(&self, def_bucket: &'static mut Vec<BucketPoint>) {
         println!("init");
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        let some_default_dg = DG {i: 0, j: 0, updates_and_vals: Vec::new()};
+        let & mut some_default_dg = &mut DG {i: 0, j: 0, updates_and_vals: &mut def_bucket.clone()};
 
         for i in 0..props.i_bins {
             for j in 0..props.j_bins {
-                self.g_map.borrow_mut().insert((i as usize, j as usize), some_default_dg.clone());
+                some_default_dg = DG {i: i, j: j, updates_and_vals: &mut def_bucket.clone()};
+                self.g_map.borrow_mut().insert((i as usize, j as usize), some_default_dg);
             }
         }
     }
@@ -157,12 +166,16 @@ impl TheWorld {
 
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
 
-            let some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<(u32, f64)>::new()};
+//            let some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: &mut Vec::<Box<(u32, f64)>>::new()};
 
             if let Some(dg) = self.g_map.borrow_mut().get_mut(&key) {
                 //TODO
                 //some default should be the one with new values added in:
-                (*dg) = some_default_dg;
+                (*dg).update(t, the_vec_of_vals)
+//                (*dg) = dg.update(t, the_vec_of_vals);
+            } else {
+                //TODO
+                //this is bad
             }
 
         }
@@ -188,14 +201,14 @@ impl TheWorld {
     }
     fn which_idxs(&self, dat: &RawData) -> Result<GridData, String> {Ok((GridData{i:1,j:1,v:0.1}))}
 }
-#[derive(Clone)]
+
 #[derive(Debug)]
-struct DG {
+struct DG<'a> {
     i: usize,
     j: usize,
-    updates_and_vals: Vec<(u32, f64)>,
+    updates_and_vals: &'a mut Vec<BucketPoint>,
 }
-impl DG {
+impl<'a> DG<'a> {
     fn get_at_time(&self, t: u32) -> f64 {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
         let coeff = self.coeff(t, last_update_time_and_value.0);
@@ -205,7 +218,7 @@ impl DG {
     }
     fn update(mut self, t: u32, vals: Vec<f64>) {
         let sum = vals.iter().fold(0.0, |sum, x| sum + x);
-        self.updates_and_vals.push((t, sum));
+        self.updates_and_vals.push(BucketPoint {t: t, v: sum});
     }
 
     fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
