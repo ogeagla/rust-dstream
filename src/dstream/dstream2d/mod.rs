@@ -106,7 +106,7 @@ struct GridData {
     v: f64,
 }
 struct TheWorld {
-    gs: HashMap<(usize, usize), DG>,
+//    gs: HashMap<(usize, usize), DG>,
     g_map: Rc<RefCell<HashMap<(usize, usize), DG>>>,
 }
 
@@ -120,7 +120,7 @@ fn test_new_put_works() {
 
     let t = 1;
 
-    let world = TheWorld{gs: HashMap::new(), g_map: Rc::new(RefCell::new(HashMap::new()))};
+    let world = TheWorld{g_map: Rc::new(RefCell::new(HashMap::new()))};
     world.init();
     let res = world.put(t, rd_vec);
 
@@ -151,31 +151,29 @@ impl TheWorld {
 
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        let mut keys_and_vals = Vec::new();
 
         for (key, group) in with_idxs.iter().group_by(|gd| (gd.i, gd.j)) {
             println!("key, g size: {}{} : {}", key.0, key.1, group.len());
 
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
 
-            keys_and_vals.push((key, the_vec_of_vals));
+            let some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<(u32, f64)>::new()};
 
-//            let the_dg = match self.gs.get(&key) {
-//                Some(dg) => dg.update(t, the_vec_of_vals),
-//                None => some_default_dg.update(t, the_vec_of_vals)
+            if let Some(dg) = self.g_map.borrow_mut().get_mut(&key) {
+                //TODO
+                //some default should be the one with new values added in:
+                (*dg) = some_default_dg;
+            }
+
+        }
+
+//        for kv in keys_and_vals.iter() {
+//            let dg_to_add = match self.gs.get(&kv.0) {
+//                Some(dg) => dg ,
+//                None => some_default_dg
 //            };
-
-        }
-
-        let some_default_dg = &DG {i: 0, j: 0, updates_and_vals: Vec::new()};
-
-        for kv in keys_and_vals.iter() {
-            let dg_to_add = match self.gs.get(&kv.0) {
-                Some(dg) => dg ,
-                None => some_default_dg
-            };
-            self.g_map.borrow_mut().insert(kv.0, dg_to_add.clone());
-        }
+//            dg_to_add.update(t, kv._1);
+//        }
 
 //        shared_map.borrow_mut().insert("africa", 92388);
 //        shared_map.borrow_mut()["asd"] = 232;
