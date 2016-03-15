@@ -112,9 +112,9 @@ struct GridData {
     j: usize,
     v: f64,
 }
-struct TheWorld<'a> {
+struct TheWorld {
 //    gs: HashMap<(usize, usize), DG>,
-    g_map: Rc<RefCell<HashMap<(usize, usize), DG<'a>>>>,
+    g_map: Rc<RefCell<HashMap<(usize, usize), RefCell<DG>>>>,
 }
 
 #[test]
@@ -127,31 +127,30 @@ fn test_new_put_works() {
 
     let t = 1;
 
-    let default_vec : &'static mut Vec<BucketPoint> = &mut Vec::new();
-    let world = TheWorld{g_map: Rc::new(RefCell::new(HashMap::new()))};
+    let default_vec : Vec<BucketPoint> = Vec::new();
+    let mut world = TheWorld{g_map: Rc::new(RefCell::new(HashMap::new()))};
     world.init(default_vec);
     let res = world.put(t, rd_vec);
 
 
 }
 
-impl<'a> TheWorld<'a> {
-    fn init(&self, def_bucket: &'static mut Vec<BucketPoint>) {
+impl TheWorld {
+    fn init(&self, def_bucket: Vec<BucketPoint>) {
         println!("init");
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        let & mut some_default_dg = &mut DG {i: 0, j: 0, updates_and_vals: &mut def_bucket.clone()};
-
         for i in 0..props.i_bins {
             for j in 0..props.j_bins {
-                some_default_dg = DG {i: i, j: j, updates_and_vals: &mut def_bucket.clone()};
-                self.g_map.borrow_mut().insert((i as usize, j as usize), some_default_dg);
+                let z_clone = def_bucket.clone();
+                let some_default_dg = DG {i: i, j: j, updates_and_vals: z_clone};
+                self.g_map.borrow_mut().insert((i as usize, j as usize), RefCell::new(some_default_dg));
             }
         }
     }
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
-    fn put(&self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
+    fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
         let with_idxs: Vec<GridData> = dat
             .iter()
@@ -166,12 +165,14 @@ impl<'a> TheWorld<'a> {
 
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
 
-//            let some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: &mut Vec::<Box<(u32, f64)>>::new()};
+            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<BucketPoint>::new()};
 
             if let Some(dg) = self.g_map.borrow_mut().get_mut(&key) {
                 //TODO
                 //some default should be the one with new values added in:
-                (*dg).update(t, the_vec_of_vals)
+//                dg;
+
+                (dg).borrow_mut().update(t, the_vec_of_vals);
 //                (*dg) = dg.update(t, the_vec_of_vals);
             } else {
                 //TODO
@@ -203,12 +204,13 @@ impl<'a> TheWorld<'a> {
 }
 
 #[derive(Debug)]
-struct DG<'a> {
+#[derive(Clone)]
+struct DG {
     i: usize,
     j: usize,
-    updates_and_vals: &'a mut Vec<BucketPoint>,
+    updates_and_vals: Vec<BucketPoint>,
 }
-impl<'a> DG<'a> {
+impl DG {
     fn get_at_time(&self, t: u32) -> f64 {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
         let coeff = self.coeff(t, last_update_time_and_value.0);
