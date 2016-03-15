@@ -110,7 +110,9 @@ impl TheWorld {
         for i in 0..props.i_bins {
             for j in 0..props.j_bins {
                 let z_clone = def_bucket.clone();
-                let some_default_dg = DG {i: i, j: j, updates_and_vals: z_clone, removed_as_spore_adic: Vec::new()};
+                let some_default_dg = DG {i: i, j: j,
+                    updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(),
+                    label: GridLabel::ClassA, status: GridStatus::Normal,};
                 (self.g_vec).push(((i as usize, j as usize), some_default_dg));
             }
         }
@@ -159,7 +161,7 @@ impl TheWorld {
 
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
 
-            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new()};
+            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(), label: GridLabel::ClassA, status: GridStatus::Normal,};
 
             let teh_dg: &mut DG = &mut self.get_by_idx(key);
             let update_dg_result = teh_dg.update(t, the_vec_of_vals);
@@ -180,7 +182,7 @@ impl TheWorld {
 
 #[test]
 fn test_dg_update_and_get() {
-    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new()};
+    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), label: GridLabel::ClassA, status: GridStatus::Normal,};
     dg.update(1, vec!(100.0));
 
     dg.update(10, vec!(200.0));
@@ -196,7 +198,7 @@ fn test_dg_update_and_get() {
 
 #[test]
 fn test_removed_as_sporadic() {
-    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: vec!(1, 2, 3, 4)};
+    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: vec!(1, 2, 3, 4), label: GridLabel::ClassA, status: GridStatus::Normal,};
     assert_eq!(1, dg.get_last_time_removed_as_sporadic_to(1));
     assert_eq!(2, dg.get_last_time_removed_as_sporadic_to(2));
     assert_eq!(4, dg.get_last_time_removed_as_sporadic_to(5));
@@ -210,7 +212,15 @@ struct DG {
     j: usize,
     updates_and_vals: Vec<GridPoint>,
     removed_as_spore_adic: Vec<u32>,
+    label: GridLabel,
+    status: GridStatus,
 }
+#[derive(Debug)]
+#[derive(Clone)]
+enum GridLabel { ClassA, }
+#[derive(Debug)]
+#[derive(Clone)]
+enum GridStatus { Sporadic, Normal, }
 impl DG {
     fn get_at_time(&self, t: u32) -> f64 {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
