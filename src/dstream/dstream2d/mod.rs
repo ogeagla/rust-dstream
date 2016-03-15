@@ -42,7 +42,7 @@ pub struct RawData {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Copy)]
-struct BucketPoint {
+struct GridPoint {
     t: u32,
     v: f64,
 }
@@ -67,7 +67,7 @@ fn test_new_put_works() {
 
     let t = 1;
 
-    let default_vec : Vec<BucketPoint> = Vec::new();
+    let default_vec : Vec<GridPoint> = Vec::new();
     let mut world = TheWorld{g_vec: Vec::new()};
     world.init(default_vec);
     let res1 = world.put(t, rd_vec.clone());
@@ -103,14 +103,14 @@ impl TheWorld {
         Ok((i_number_of_sizes, j_number_of_sizes))
     }
 
-    fn init(&mut self, def_bucket: Vec<BucketPoint>) {
+    fn init(&mut self, def_bucket: Vec<GridPoint>) {
         println!("init");
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
         for i in 0..props.i_bins {
             for j in 0..props.j_bins {
                 let z_clone = def_bucket.clone();
-                let some_default_dg = DG {i: i, j: j, updates_and_vals: z_clone};
+                let some_default_dg = DG {i: i, j: j, updates_and_vals: z_clone, removed_as_spore_adic: Vec::new()};
                 (self.g_vec).push(((i as usize, j as usize), some_default_dg));
             }
         }
@@ -159,7 +159,7 @@ impl TheWorld {
 
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
 
-            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<BucketPoint>::new()};
+            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new()};
 
             let teh_dg: &mut DG = &mut self.get_by_idx(key);
             let update_dg_result = teh_dg.update(t, the_vec_of_vals);
@@ -180,7 +180,7 @@ impl TheWorld {
 
 #[test]
 fn test_dg_update_and_get() {
-    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new()};
+    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new()};
     dg.update(1, vec!(100.0));
 
     dg.update(10, vec!(200.0));
@@ -194,13 +194,22 @@ fn test_dg_update_and_get() {
     println!("v: {}", v_at_t);
 }
 
+#[test]
+fn test_removed_as_sporadic() {
+    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: vec!(1, 2, 3, 4)};
+    assert_eq!(1, dg.get_last_time_removed_as_sporadic_to(1));
+    assert_eq!(2, dg.get_last_time_removed_as_sporadic_to(2));
+    assert_eq!(4, dg.get_last_time_removed_as_sporadic_to(5));
+}
+
 #[derive(Debug)]
 #[derive(Clone)]
 //#[derive(Copy)] TODO: how to make this work?
 struct DG {
     i: usize,
     j: usize,
-    updates_and_vals: Vec<BucketPoint>,
+    updates_and_vals: Vec<GridPoint>,
+    removed_as_spore_adic: Vec<u32>,
 }
 impl DG {
     fn get_at_time(&self, t: u32) -> f64 {
@@ -210,17 +219,22 @@ impl DG {
     }
     fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
         let sum = vals.clone().iter().fold(0.0, |sum, x| sum + x);
-        self.updates_and_vals.push(BucketPoint {t: t, v: sum});
+        self.updates_and_vals.push(GridPoint {t: t, v: sum});
         println!("  times updated dg: {}", self.updates_and_vals.len());
         Ok(())
     }
 
     fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
-        let a: BucketPoint = self.updates_and_vals.clone().into_iter().filter(|bp| bp.t < t).max_by_key(|bp| bp.t).unwrap();
+        let a: GridPoint = self.updates_and_vals.clone().into_iter().filter(|bp| bp.t < t).max_by_key(|bp| bp.t).unwrap();
         let t_l = a.t;
         let v_l = a.v;
         println!("  last update relative to {} is (t: {}, v: {})", t, t_l, v_l);
         (t_l, v_l)
+    }
+
+    fn get_last_time_removed_as_sporadic_to(&self, t: u32) -> u32 {
+        let t = self.removed_as_spore_adic.clone().into_iter().filter(|&the_t| the_t < t).max().unwrap();
+        t
     }
 
     fn coeff(&self, t_n: u32, t_l: u32) -> f64 {
