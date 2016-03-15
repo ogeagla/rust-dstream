@@ -79,19 +79,29 @@ fn test_new_put_works() {
 
 impl TheWorld {
 
+    
+    fn are_neighbors(dg1: DG, dg2: DG) -> bool {
+        if (dg1.i == dg2.i) && ((dg1.j - dg2.j) as i32).abs() <= 1 {
+            return true
+        } else if (dg1.j == dg2.j) && ((dg1.i - dg2.i) as i32).abs() <= 1 {
+            return true
+        }
+        false
+    }
+    
     #[test]
-    fn test_which_grid() {
+    fn test_compute_grid_indxs() {
         let loc = (-6., 6.);
         let i_rn = (-10.0, 10.0);
         let j_rn = (-10.0, 10.0);
         let i_bins = 10 as usize;
         let j_bins = 10 as usize;
 
-        let result = TheWorld::which_grid(loc, i_rn, j_rn, i_bins, j_bins).unwrap();
+        let result = TheWorld::compute_grid_indxs(loc, i_rn, j_rn, i_bins, j_bins).unwrap();
         assert_eq!((2, 8), result);
 
     }
-    fn which_grid(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
+    fn compute_grid_indxs(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
         let i_size = (i_range.1 - i_range.0) / i_bins as f64;
         let i_number_of_sizes = ((val.0 - i_range.0) / i_size) as usize;
         let j_size = (j_range.1 - j_range.0) / j_bins as f64;
@@ -172,7 +182,7 @@ impl TheWorld {
 
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        let idxs = TheWorld::which_grid((dat.x, dat.y), props.i_range, props.j_range,props.i_bins, props.j_bins).unwrap();
+        let idxs = TheWorld::compute_grid_indxs((dat.x, dat.y), props.i_range, props.j_range,props.i_bins, props.j_bins).unwrap();
 
         Ok((GridData{i:idxs.0,j:idxs.1,v:dat.v}))
 
