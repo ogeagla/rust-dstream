@@ -77,30 +77,44 @@ fn test_new_put_works() {
 
 }
 
+#[test]
+fn test_compute_grid_indxs() {
+    let loc = (-6., 6.);
+    let i_rn = (-10.0, 10.0);
+    let j_rn = (-10.0, 10.0);
+    let i_bins = 10 as usize;
+    let j_bins = 10 as usize;
+
+    let result = TheWorld::compute_grid_indxs(loc, i_rn, j_rn, i_bins, j_bins).unwrap();
+    assert_eq!((2, 8), result);
+
+}
+
+#[test]
+fn test_are_neighbors() {
+    let dg1 = &DG {i: 0, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg2 = &DG {i: 1, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg3 = &DG {i: 1, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+
+    assert_eq!(true, TheWorld::are_neighbors(dg1, dg2));
+    assert_eq!(true, TheWorld::are_neighbors(dg2, dg3));
+    assert_eq!(false, TheWorld::are_neighbors(dg1, dg3));
+}
+
 impl TheWorld {
 
-    
-    fn are_neighbors(dg1: DG, dg2: DG) -> bool {
-        if (dg1.i == dg2.i) && ((dg1.j - dg2.j) as i32).abs() <= 1 {
+    fn are_neighbors(dg1: &DG, dg2: &DG) -> bool {
+        if (dg1.i == dg2.i) && (dg1.j as i32 - dg2.j as i32).abs() <= 1 {
             return true
-        } else if (dg1.j == dg2.j) && ((dg1.i - dg2.i) as i32).abs() <= 1 {
+        } else if (dg1.j == dg2.j) && (dg1.i as i32 - dg2.i as i32).abs() <= 1 {
             return true
         }
         false
     }
-    
-    #[test]
-    fn test_compute_grid_indxs() {
-        let loc = (-6., 6.);
-        let i_rn = (-10.0, 10.0);
-        let j_rn = (-10.0, 10.0);
-        let i_bins = 10 as usize;
-        let j_bins = 10 as usize;
 
-        let result = TheWorld::compute_grid_indxs(loc, i_rn, j_rn, i_bins, j_bins).unwrap();
-        assert_eq!((2, 8), result);
-
-    }
     fn compute_grid_indxs(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
         let i_size = (i_range.1 - i_range.0) / i_bins as f64;
         let i_number_of_sizes = ((val.0 - i_range.0) / i_size) as usize;
