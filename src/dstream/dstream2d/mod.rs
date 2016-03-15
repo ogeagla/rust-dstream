@@ -136,7 +136,7 @@ fn test_new_put_works() {
 }
 
 impl TheWorld {
-    fn init(&self, def_bucket: Vec<BucketPoint>) {
+    fn init(&mut self, def_bucket: Vec<BucketPoint>) {
         println!("init");
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
@@ -144,16 +144,16 @@ impl TheWorld {
             for j in 0..props.j_bins {
                 let z_clone = def_bucket.clone();
                 let some_default_dg = DG {i: i, j: j, updates_and_vals: z_clone};
-                (&mut self.g_vec).push(((i as usize, j as usize), some_default_dg));
+                (self.g_vec).push(((i as usize, j as usize), some_default_dg));
             }
         }
     }
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
 
-    fn get_by_idx(&self, idx: (usize, usize))-> &mut DG {
-        let vec_f: Vec<((usize, usize), DG)> = self.g_vec.into_iter().filter(|i| i.0 == idx).collect();
-        &mut vec_f[0].1
+    fn get_by_idx(&mut self, idx: (usize, usize))-> DG {
+        let  vec_f: Vec<((usize, usize), DG)> = self.g_vec.clone().into_iter().filter(|i| i.0 == idx).collect();
+        vec_f[0].1.clone()
     }
     fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
