@@ -189,7 +189,7 @@ impl TheWorld {
 
 
         for (key, group) in with_idxs.iter().group_by(|gd| (gd.i, gd.j)) {
-            println!("--put: key, g size: {}{} : {}", key.0, key.1, group.len());
+            println!("--put: key, g size: ({},{}) : {}", key.0, key.1, group.len());
 
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
 
@@ -201,7 +201,15 @@ impl TheWorld {
         }
         Ok(())
     }
-    fn which_idxs(&self, dat: &RawData) -> Result<GridData, String> {Ok((GridData{i:1,j:1,v:0.1}))}
+    fn which_idxs(&self, dat: &RawData) -> Result<GridData, String> {
+
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+
+        let idxs = grid_helpers::which_grid((dat.x, dat.y), props.i_range, props.j_range,props.i_bins, props.j_bins).unwrap();
+
+        Ok((GridData{i:idxs.0,j:idxs.1,v:dat.v}))
+
+    }
 }
 
 #[derive(Debug)]
@@ -223,7 +231,7 @@ impl DG {
     fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
         let sum = vals.clone().iter().fold(0.0, |sum, x| sum + x);
         self.updates_and_vals.push(BucketPoint {t: t, v: sum});
-        println!("vals len from dg: {}", self.updates_and_vals.len());
+        println!("  times updated dg: {}", self.updates_and_vals.len());
         Ok(())
     }
 
