@@ -3,6 +3,17 @@ extern crate nalgebra as na;
 use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
 use na::*;
 
+#[test]
+fn test_is_inside_grid() {
+
+}
+
+#[test]
+fn test_is_a_grid_group() {
+    //TODO
+    let result = TheWorld::is_a_grid_group(Vec::new());
+    assert_eq!(true, result);
+}
 
 #[test]
 fn test_compute_grid_indxs() {

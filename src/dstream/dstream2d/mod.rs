@@ -76,13 +76,32 @@ impl Default for DStreamProps {
 
 impl TheWorld {
 
-    fn are_neighbors(dg1: &DG, dg2: &DG) -> bool {
-        if (dg1.i == dg2.i) && (dg1.j as i32 - dg2.j as i32).abs() <= 1 {
-            return true
-        } else if (dg1.j == dg2.j) && (dg1.i as i32 - dg2.i as i32).abs() <= 1 {
-            return true
-        }
+    fn is_inside_grid(dg1: DG, other_dgs: Vec<DG>) -> bool {
+        //TODO
         false
+    }
+
+    fn is_a_grid_group(dgs: Vec<DG>) -> bool {
+        //TODO
+        //def 3.4 of paper
+        true
+    }
+
+
+    fn are_neighbors(dg1: &DG, dg2: &DG) -> bool {
+        if TheWorld::are_neighbors_in_i(dg1, dg2) || TheWorld::are_neighbors_in_j(dg1, dg2) {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn are_neighbors_in_i(dg1: &DG, dg2: &DG) -> bool {
+        (dg1.i == dg2.i) && (dg1.j as i32 - dg2.j as i32).abs() <= 1
+    }
+
+    fn are_neighbors_in_j(dg1: &DG, dg2: &DG) -> bool {
+        (dg1.j == dg2.j) && (dg1.i as i32 - dg2.i as i32).abs() <= 1
     }
 
     fn compute_grid_indxs(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
