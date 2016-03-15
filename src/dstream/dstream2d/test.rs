@@ -72,5 +72,4 @@ fn test_put_works() {
     let res2 = world.put(t + 1, rd_vec.clone());
     let res3 = world.put(t + 2, rd_vec.clone());
 
-
 }

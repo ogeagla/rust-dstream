@@ -7,20 +7,23 @@ use std::rc::Rc;
 
 mod test;
 
-impl Default for DStreamProps {
-    fn default() -> DStreamProps {
-        DStreamProps {
-            c_m: 3.0,
-            c_l: 0.8,
-            lambda: 0.998,
-            beta: 0.3,
-            i_bins: 10 as usize,
-            j_bins: 10 as usize,
-            i_range: (-10.0, 10.0),
-            j_range: (-10.0, 10.0),
-        }
-    }
+#[derive(Debug)]
+#[derive(Clone)]
+struct DG {
+    i: usize,
+    j: usize,
+    updates_and_vals: Vec<GridPoint>,
+    removed_as_spore_adic: Vec<u32>,
 }
+
+#[derive(Debug)]
+#[derive(Clone)]
+enum GridLabel { Dense, Sparse, Transitional, }
+
+#[derive(Debug)]
+#[derive(Clone)]
+enum GridStatus { Sporadic, Normal, }
+
 pub struct DStreamProps {
     c_m: f64,
     c_l: f64,
@@ -54,6 +57,21 @@ struct GridData {
 }
 struct TheWorld {
     g_vec: Vec<((usize, usize), DG)>,
+}
+
+impl Default for DStreamProps {
+    fn default() -> DStreamProps {
+        DStreamProps {
+            c_m: 3.0,
+            c_l: 0.8,
+            lambda: 0.998,
+            beta: 0.3,
+            i_bins: 10 as usize,
+            j_bins: 10 as usize,
+            i_range: (-10.0, 10.0),
+            j_range: (-10.0, 10.0),
+        }
+    }
 }
 
 impl TheWorld {
@@ -155,21 +173,6 @@ impl TheWorld {
     }
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
-//#[derive(Copy)] TODO: how to make this work?
-struct DG {
-    i: usize,
-    j: usize,
-    updates_and_vals: Vec<GridPoint>,
-    removed_as_spore_adic: Vec<u32>,
-}
-#[derive(Debug)]
-#[derive(Clone)]
-enum GridLabel { Dense, Sparse, Transitional, }
-#[derive(Debug)]
-#[derive(Clone)]
-enum GridStatus { Sporadic, Normal, }
 impl DG {
 
     fn get_grid_label_at_time(&self, t:u32) -> GridLabel {
