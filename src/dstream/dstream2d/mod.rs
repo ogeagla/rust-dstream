@@ -7,54 +7,6 @@ use std::rc::Rc;
 
 mod test;
 
-#[test]
-fn test_which_grid() {
-    let loc = (-6., 6.);
-    let i_rn = (-10.0, 10.0);
-    let j_rn = (-10.0, 10.0);
-    let i_bins = 10 as usize;
-    let j_bins = 10 as usize;
-
-    let result = grid_helpers::which_grid(loc, i_rn, j_rn, i_bins, j_bins).unwrap();
-    assert_eq!((2, 8), result);
-
-}
-
-mod grid_helpers {
-    pub fn which_grid(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
-        let i_size = (i_range.1 - i_range.0) / i_bins as f64;
-        let i_number_of_sizes = ((val.0 - i_range.0) / i_size) as usize;
-        let j_size = (j_range.1 - j_range.0) / j_bins as f64;
-        let j_number_of_sizes = ((val.1 - j_range.0) / j_size) as usize;
-
-        assert!(i_number_of_sizes < i_bins);
-        assert!(j_number_of_sizes < j_bins);
-
-
-        Ok((i_number_of_sizes, j_number_of_sizes))
-    }
-
-//
-//        fn get_value_at_time(&self, time: u32, lambda: f64, dats: Vec<((usize,usize),Dat)>) -> Result<f64, String> {
-//
-//    //TODO time - 1 is wrong, it should be biggest time smaller than current
-//    let coeff = self.compute_decay_coeff_at_time(time, time - 5, lambda);
-//
-//    let sum_vals = dats.iter().fold(0.0, |sum, x| sum + x.1.val);
-//    println!("sum vals: {}", sum_vals);
-//    let new_d = coeff * sum_vals + 1.0;
-//    println!("new D: {}", new_d);
-//
-//    Ok(new_d)
-//    }
-
-
-//        fn compute_decay_coeff_at_time(&self, t_n: u32, t_l: u32, lambda: f64) -> f64 {
-//    lambda.powf((t_n - t_l) as f64)
-//    }
-}
-
-
 impl Default for DStreamProps {
     fn default() -> DStreamProps {
         DStreamProps {
@@ -79,24 +31,6 @@ pub struct DStreamProps {
     i_range: (f64, f64),
     j_range: (f64, f64),
 }
-
-/*
-
-input data: [(x, y, v)]
-
-///some impl
-for some time t in 0..:
-  _.put t, [(x, y, v)]
-
-
-//some other impl
-fn put (t, [(x, y, v)]):
-  [(i, j, sum_vals)] = [x,y,v].map(i,j,v).groupby(i,j).reduce(_+_)
-  foreach:
-    g = density_grids[i, j]
-    g.update(t, sum_vals)
-    print g.get()
-*/
 
 #[derive(Clone)]
 pub struct RawData {
@@ -144,6 +78,31 @@ fn test_new_put_works() {
 }
 
 impl TheWorld {
+
+    #[test]
+    fn test_which_grid() {
+        let loc = (-6., 6.);
+        let i_rn = (-10.0, 10.0);
+        let j_rn = (-10.0, 10.0);
+        let i_bins = 10 as usize;
+        let j_bins = 10 as usize;
+
+        let result = TheWorld::which_grid(loc, i_rn, j_rn, i_bins, j_bins).unwrap();
+        assert_eq!((2, 8), result);
+
+    }
+    fn which_grid(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {
+        let i_size = (i_range.1 - i_range.0) / i_bins as f64;
+        let i_number_of_sizes = ((val.0 - i_range.0) / i_size) as usize;
+        let j_size = (j_range.1 - j_range.0) / j_bins as f64;
+        let j_number_of_sizes = ((val.1 - j_range.0) / j_size) as usize;
+
+        assert!(i_number_of_sizes < i_bins);
+        assert!(j_number_of_sizes < j_bins);
+
+        Ok((i_number_of_sizes, j_number_of_sizes))
+    }
+
     fn init(&mut self, def_bucket: Vec<BucketPoint>) {
         println!("init");
         let props: DStreamProps = DStreamProps { ..Default::default() };
@@ -212,11 +171,21 @@ impl TheWorld {
 
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        let idxs = grid_helpers::which_grid((dat.x, dat.y), props.i_range, props.j_range,props.i_bins, props.j_bins).unwrap();
+        let idxs = TheWorld::which_grid((dat.x, dat.y), props.i_range, props.j_range,props.i_bins, props.j_bins).unwrap();
 
         Ok((GridData{i:idxs.0,j:idxs.1,v:dat.v}))
 
     }
+}
+
+#[test]
+fn test_dg_update_and_get() {
+    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new()};
+    dg.update(1, vec!(100.0));
+    dg.update(10, vec!(200.0));
+    dg.update(20, vec!(300.0));
+    let v_at_t = dg.get_at_time(30);
+    println!("v: {}", v_at_t);
 }
 
 #[derive(Debug)]
@@ -243,13 +212,16 @@ impl DG {
     }
 
     fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
-        //TODO
-        (1, 123.232)
+        let a: BucketPoint = self.updates_and_vals.clone().into_iter().filter(|bp| bp.t < t).max_by_key(|bp| bp.t).unwrap();
+        let t_l = a.t;
+        let v_l = a.v;
+        println!("last update relative to {} is (t: {}, v: {})", t, t_l, v_l);
+        (t_l, v_l)
     }
 
     fn coeff(&self, t_n: u32, t_l: u32) -> f64 {
-        //TODO
-        100.0343
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+        props.lambda.powf((t_n - t_l) as f64)
     }
 
  }
