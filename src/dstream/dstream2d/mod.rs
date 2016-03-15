@@ -199,9 +199,8 @@ fn test_dg_update_and_get() {
 #[test]
 fn test_removed_as_sporadic() {
     let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: vec!(1, 2, 3, 4), label: GridLabel::ClassA, status: GridStatus::Normal,};
-    assert_eq!(1, dg.get_last_time_removed_as_sporadic_to(1));
-    assert_eq!(2, dg.get_last_time_removed_as_sporadic_to(2));
-    assert_eq!(4, dg.get_last_time_removed_as_sporadic_to(5));
+    assert_eq!(1, dg.get_last_time_removed_as_sporadic_to(2));
+    assert_eq!(4, dg.get_last_time_removed_as_sporadic_to(6));
 }
 
 #[derive(Debug)]
@@ -222,6 +221,14 @@ enum GridLabel { ClassA, }
 #[derive(Clone)]
 enum GridStatus { Sporadic, Normal, }
 impl DG {
+
+    fn is_dense_at_time(&self, t: u32) -> bool {
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+        let n_size = (self.i * self.j) as f64;
+        let d_m = props.c_m / (n_size * (1.0 - props.lambda));
+        self.get_at_time(t) >= d_m
+    }
+
     fn get_at_time(&self, t: u32) -> f64 {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
         let coeff = self.coeff(t, last_update_time_and_value.0);
