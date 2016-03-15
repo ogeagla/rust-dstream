@@ -114,7 +114,7 @@ struct GridData {
 }
 struct TheWorld {
 //    gs: HashMap<(usize, usize), DG>,
-    g_map: Rc<RefCell<HashMap<(usize, usize), RefCell<DG>>>>,
+    g_vec: Vec<((usize, usize), DG)>,
 }
 
 #[test]
@@ -128,7 +128,7 @@ fn test_new_put_works() {
     let t = 1;
 
     let default_vec : Vec<BucketPoint> = Vec::new();
-    let mut world = TheWorld{g_map: Rc::new(RefCell::new(HashMap::new()))};
+    let mut world = TheWorld{g_vec: Vec::new()};
     world.init(default_vec);
     let res = world.put(t, rd_vec);
 
@@ -144,12 +144,17 @@ impl TheWorld {
             for j in 0..props.j_bins {
                 let z_clone = def_bucket.clone();
                 let some_default_dg = DG {i: i, j: j, updates_and_vals: z_clone};
-                self.g_map.borrow_mut().insert((i as usize, j as usize), RefCell::new(some_default_dg));
+                (&mut self.g_vec).push(((i as usize, j as usize), some_default_dg));
             }
         }
     }
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
+
+    fn get_by_idx(&self, idx: (usize, usize))-> &mut DG {
+        let vec_f: Vec<((usize, usize), DG)> = self.g_vec.into_iter().filter(|i| i.0 == idx).collect();
+        &mut vec_f[0].1
+    }
     fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
         let with_idxs: Vec<GridData> = dat
@@ -167,17 +172,21 @@ impl TheWorld {
 
             let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<BucketPoint>::new()};
 
-            if let Some(dg) = self.g_map.borrow_mut().get_mut(&key) {
-                //TODO
-                //some default should be the one with new values added in:
-//                dg;
+            let teh_dg = self.get_by_idx(key);
 
-                (dg).borrow_mut().update(t, the_vec_of_vals);
-//                (*dg) = dg.update(t, the_vec_of_vals);
-            } else {
-                //TODO
-                //this is bad
-            }
+//
+//
+//            if let Some(dg) = self.g_vec.borrow_mut().get_mut(&key) {
+//                //TODO
+//                //some default should be the one with new values added in:
+////                dg;
+//
+//                (dg).borrow_mut().update(t, the_vec_of_vals);
+////                (*dg) = dg.update(t, the_vec_of_vals);
+//            } else {
+//                //TODO
+//                //this is bad
+//            }
 
         }
 
