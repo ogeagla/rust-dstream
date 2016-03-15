@@ -127,8 +127,9 @@ fn test_new_put_works() {
     let raw_data_1 = RawData{x: 1.0, y: -1.0, v: 123.45};
     let raw_data_2 = RawData{x: 5.0, y: -7.0, v: 23.45};
     let raw_data_3 = RawData{x: 5.0, y: -7.0, v: 83.45};
+    let raw_data_4 = RawData{x: 15.0, y: -17.0, v: 83.45};
 
-    let rd_vec = vec!(raw_data_1, raw_data_2, raw_data_3);
+    let rd_vec = vec!(raw_data_1, raw_data_2, raw_data_3, raw_data_4);
 
     let t = 1;
 
@@ -170,18 +171,24 @@ impl TheWorld {
     fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
 
-//        if ((loc2d.0 <= self.props.i_range.1) &&
-//        (loc2d.0 >= self.props.i_range.0) &&
-//        (loc2d.1 <= self.props.j_range.1) &&
-//        (loc2d.1 >= self.props.j_range.0)) {
-//
-//            println!("valid!");
-//            let idxs =
-//            grid_helpers::which_grid(loc2d, self.props.i_range, self.props.j_range,
-//                                     self.props.i_bins, self.props.j_bins).unwrap();
+        fn validate_range(loc2d: (f64, f64)) -> bool {
 
+            let props: DStreamProps = DStreamProps { ..Default::default() };
+
+            if ((loc2d.0 <= props.i_range.1) &&
+            (loc2d.0 >= props.i_range.0) &&
+            (loc2d.1 <= props.j_range.1) &&
+            (loc2d.1 >= props.j_range.0)) {
+                println!("valid!");
+            } else {
+                println!("invalid! -- bad input range");
+                return false
+            }
+            return true
+        }
         let with_idxs: Vec<GridData> = dat
             .iter()
+            .filter(|rd| validate_range((rd.x, rd.y)))
             .map(|rd| self.which_idxs(rd).unwrap())
             .collect();
 
