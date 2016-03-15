@@ -182,8 +182,14 @@ impl TheWorld {
 fn test_dg_update_and_get() {
     let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new()};
     dg.update(1, vec!(100.0));
+
     dg.update(10, vec!(200.0));
     dg.update(20, vec!(300.0));
+
+    assert_eq!((1, 100.0), dg.get_last_update_and_value_to(2));
+    assert_eq!((10, 200.0), dg.get_last_update_and_value_to(14));
+    assert_eq!((20, 300.0), dg.get_last_update_and_value_to(22));
+
     let v_at_t = dg.get_at_time(30);
     println!("v: {}", v_at_t);
 }
@@ -200,9 +206,7 @@ impl DG {
     fn get_at_time(&self, t: u32) -> f64 {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
         let coeff = self.coeff(t, last_update_time_and_value.0);
-        let d = coeff * last_update_time_and_value.1 + 1.0;
-
-        d
+        coeff * last_update_time_and_value.1 + 1.0
     }
     fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
         let sum = vals.clone().iter().fold(0.0, |sum, x| sum + x);
@@ -215,7 +219,7 @@ impl DG {
         let a: BucketPoint = self.updates_and_vals.clone().into_iter().filter(|bp| bp.t < t).max_by_key(|bp| bp.t).unwrap();
         let t_l = a.t;
         let v_l = a.v;
-        println!("last update relative to {} is (t: {}, v: {})", t, t_l, v_l);
+        println!("  last update relative to {} is (t: {}, v: {})", t, t_l, v_l);
         (t_l, v_l)
     }
 
