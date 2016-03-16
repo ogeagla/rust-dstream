@@ -1,7 +1,7 @@
 extern crate nalgebra as na;
 
 use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
-use na::*;
+use na::{Mat2, Vec2, Row};
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::algo::*;
@@ -43,6 +43,35 @@ fn test_graph_works_as_expected() {
 
     fn convert_graph_adj_mat_to_nalgebra_mat2() {
         //TODO
+        let g = Graph::<(usize, usize), (usize, usize)>::new();
+        let mut m2 : Mat2<f64> = na::one();
+
+        for n1 in g.node_indices() {
+            let mut neighs_v = Vec::new();
+            let neighs = g.neighbors_undirected(n1);
+            //TODO ugly way to covert iterator to vector
+            for neigh in neighs {
+                neighs_v.push(neigh);
+            }
+
+            let mut the_row: Vec<f64> = Vec::new();
+            let mut the_vec_rows: Vec2<f64> = na::zero();
+
+            for n2 in g.node_indices() {
+                if ! neighs_v.contains(&n2) {
+                    println!("does not contain");
+                    the_row.push(1.0);
+                    *the_vec_rows.index_mut(1 as usize) = 1.0;
+
+                } else {
+                    the_row.push(0.0);
+                }
+
+            }
+//            m2.set_row(n1.index(), the_row);
+        }
+
+
     }
 
 }
