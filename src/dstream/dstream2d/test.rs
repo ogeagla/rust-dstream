@@ -3,7 +3,6 @@ extern crate nalgebra as na;
 use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
 use na::*;
 
-
 #[test]
 fn test_mark_and_remove_and_reset_spore_adics() {
     //TODO
@@ -25,8 +24,22 @@ fn test_is_inside_grid() {
 #[test]
 fn test_is_a_grid_group() {
     //TODO
-    let result = TheWorld::is_a_grid_group(Vec::new());
-    assert_eq!(false, result);
+    let dg1 = DG {i: 0, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg2 = DG {i: 1, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg3 = DG {i: 0, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg4 = DG {i: 1, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg5 = DG {i: 1, j: 4,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+
+    let result = TheWorld::is_a_grid_group(vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone()));
+    assert_eq!(true, result);
+
+    let result2 = TheWorld::is_a_grid_group(vec!(dg1, dg2, dg3, dg4, dg5));
+    assert_eq!(false, result2);
 }
 
 #[test]

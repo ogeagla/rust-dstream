@@ -76,8 +76,6 @@ impl Default for DStreamProps {
 
 impl TheWorld {
 
-
-
     fn mark_and_remove_and_reset_spore_adics(t: u32, dgs: Vec<DG>) {
         //prop 4.3: mark as sporadic; grids marked sporadic last t can be removed this t, or labeled as normal
         //TODO
@@ -96,16 +94,28 @@ impl TheWorld {
     fn is_a_grid_group(dgs: Vec<DG>) -> bool {
         //TODO
         //def 3.4 of paper
+
+        let mut truf_table: Vec<((usize, usize), (usize, usize), bool)> = Vec::new();
+        for i in dgs.into_iter().combinations_n(2).take(10) {
+
+            let i1 = i[0].i;
+            let j1 = i[0].j;
+            let i2 = i[1].i;
+            let j2 = i[1].j;
+
+            let are_they_idontevenkno = TheWorld::are_neighbors(&i[0], &i[1]);
+            println!("checking if pair are neighbors: {} {} and {} {} => {}", i1, j1, i2, j2, are_they_idontevenkno);
+
+            truf_table.push(((i1, j1), (i2, j2), are_they_idontevenkno));
+        }
+
+
         true
     }
 
 
     fn are_neighbors(dg1: &DG, dg2: &DG) -> bool {
-        if TheWorld::are_neighbors_in_i(dg1, dg2) || TheWorld::are_neighbors_in_j(dg1, dg2) {
-            true
-        } else {
-            false
-        }
+        TheWorld::are_neighbors_in_i(dg1, dg2) || TheWorld::are_neighbors_in_j(dg1, dg2)
     }
 
     fn are_neighbors_in_i(dg1: &DG, dg2: &DG) -> bool {
@@ -155,21 +165,18 @@ impl TheWorld {
     }
     fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
-
         fn validate_range(loc2d: (f64, f64)) -> bool {
-
             let props: DStreamProps = DStreamProps { ..Default::default() };
-
-            if ((loc2d.0 <= props.i_range.1) &&
-            (loc2d.0 >= props.i_range.0) &&
-            (loc2d.1 <= props.j_range.1) &&
-            (loc2d.1 >= props.j_range.0)) {
+            if (loc2d.0 <= props.i_range.1) &&
+               (loc2d.0 >= props.i_range.0) &&
+               (loc2d.1 <= props.j_range.1) &&
+               (loc2d.1 >= props.j_range.0) {
                 println!("valid!");
             } else {
                 println!("invalid! -- bad input range");
                 return false
             }
-            return true
+            true
         }
         let with_idxs: Vec<GridData> = dat
             .iter()
