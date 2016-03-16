@@ -4,6 +4,7 @@ use std::num::*;
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
+use petgraph::Graph;
 
 mod test;
 
@@ -95,19 +96,34 @@ impl TheWorld {
         //TODO
         //def 3.4 of paper
 
-        let mut truf_table: Vec<((usize, usize), (usize, usize), bool)> = Vec::new();
-        for i in dgs.into_iter().combinations_n(2).take(10) {
+        let mut neighbors_truth_vec = Vec::new();
+        let mut neighbors_truth_map = HashMap::new();
+        for dg in dgs.clone().into_iter().combinations_n(2) {
 
-            let i1 = i[0].i;
-            let j1 = i[0].j;
-            let i2 = i[1].i;
-            let j2 = i[1].j;
+            let i1 = dg[0].i;
+            let j1 = dg[0].j;
+            let i2 = dg[1].i;
+            let j2 = dg[1].j;
 
-            let are_they_idontevenkno = TheWorld::are_neighbors(&i[0], &i[1]);
-            println!("checking if pair are neighbors: {} {} and {} {} => {}", i1, j1, i2, j2, are_they_idontevenkno);
+            let r_neighbors = TheWorld::are_neighbors(&dg[0], &dg[1]);
+            println!("checking if pair are neighbors: {} {} and {} {} => {}", i1, j1, i2, j2, r_neighbors);
 
-            truf_table.push(((i1, j1), (i2, j2), are_they_idontevenkno));
+            neighbors_truth_vec.push(((i1, j1), (i2, j2), r_neighbors));
+            neighbors_truth_map.insert(((i1, j1), (i2, j2)), r_neighbors);
         }
+
+        for dg1 in dgs.clone().into_iter() {
+            let i1 = dg1.i;
+            let j1 = dg1.j;
+
+            for dg2 in dgs.clone().into_iter() {
+                let i2 = dg2.i;
+                let j2 = dg2.j;
+
+            }
+
+        }
+
 
 
         true

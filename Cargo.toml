@@ -7,3 +7,4 @@ authors = [ "Octavian Geagla <ogeagla@gmail.com>" ]
 nalgebra = "0.5.1"
 num = "0.1.31"
 itertools = "0.4"
+petgraph = "0.2.3"
