@@ -76,6 +76,13 @@ impl Default for DStreamProps {
 
 impl TheWorld {
 
+
+
+    fn mark_and_remove_and_reset_spore_adics(t: u32, dgs: Vec<DG>) {
+        //prop 4.3: mark as sporadic; grids marked sporadic last t can be removed this t, or labeled as normal
+        //TODO
+    }
+
     fn is_a_grid_cluster(dg1: DG, other_dgs: Vec<DG>) -> bool {
         //TODO
         false
@@ -212,6 +219,7 @@ impl DG {
         match label {
             GridLabel::Sparse => {
                 let last_t_removed_spore = self.get_last_time_removed_as_sporadic_to(t);
+                //TODO if has not been deleted before this should be false, but right now it blows up
                 d_t < pi && t as f64 >= (1.0 + props.beta) * (last_t_removed_spore as f64)
             },
             _ => false

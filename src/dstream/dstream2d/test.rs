@@ -5,6 +5,12 @@ use na::*;
 
 
 #[test]
+fn test_mark_and_remove_and_reset_spore_adics() {
+    //TODO
+    assert!(false);
+}
+
+#[test]
 fn test_is_a_grid_cluster() {
     //TODO
     assert!(false);
