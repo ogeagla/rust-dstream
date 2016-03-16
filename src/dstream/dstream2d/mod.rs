@@ -76,6 +76,11 @@ impl Default for DStreamProps {
 
 impl TheWorld {
 
+    fn is_a_grid_cluster(dg1: DG, other_dgs: Vec<DG>) -> bool {
+        //TODO
+        false
+    }
+
     fn is_inside_grid(dg1: DG, other_dgs: Vec<DG>) -> bool {
         //TODO
         false
@@ -194,13 +199,33 @@ impl TheWorld {
 
 impl DG {
 
+    fn is_sporadic (&self, t: u32) -> bool {
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+        let last_update_t_and_v = self.get_last_update_and_value_to(t);
+        let d_t = self.get_at_time(t).1;
+        let n_size = (self.i * self.j) as f64;
+
+        let pi = (props.c_l * (1.0 - props.lambda.powf((t - last_update_t_and_v.0 + 1) as f64))) / (n_size * (1.0 - props.lambda));
+
+        let label = self.get_grid_label_at_time(t);
+
+        match label {
+            GridLabel::Sparse => {
+                let last_t_removed_spore = self.get_last_time_removed_as_sporadic_to(t);
+                d_t < pi && t as f64 >= (1.0 + props.beta) * (last_t_removed_spore as f64)
+            },
+            _ => false
+        }
+
+    }
+
     fn get_grid_label_at_time(&self, t:u32) -> GridLabel {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let n_size = (self.i * self.j) as f64;
         let d_m = props.c_m / (n_size * (1.0 - props.lambda));
         let d_l = props.c_l / (n_size * (1.0 - props.lambda));
 
-        let d_t = self.get_at_time(t);
+        let d_t = self.get_at_time(t).1;
 
         if d_t >= d_m {
             GridLabel::Dense
@@ -212,10 +237,10 @@ impl DG {
         }
     }
 
-    fn get_at_time(&self, t: u32) -> f64 {
+    fn get_at_time(&self, t: u32) -> (u32, f64) {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
         let coeff = self.coeff(t, last_update_time_and_value.0);
-        coeff * last_update_time_and_value.1 + 1.0
+        (last_update_time_and_value.0, coeff * last_update_time_and_value.1 + 1.0)
     }
     fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
         let sum = vals.clone().iter().fold(0.0, |sum, x| sum + x);

@@ -3,16 +3,24 @@ extern crate nalgebra as na;
 use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
 use na::*;
 
+
+#[test]
+fn test_is_a_grid_cluster() {
+    //TODO
+    assert!(false);
+}
+
 #[test]
 fn test_is_inside_grid() {
-
+    //TODO
+    assert!(false);
 }
 
 #[test]
 fn test_is_a_grid_group() {
     //TODO
     let result = TheWorld::is_a_grid_group(Vec::new());
-    assert_eq!(true, result);
+    assert_eq!(false, result);
 }
 
 #[test]
@@ -55,7 +63,7 @@ fn test_dg_update_and_get() {
     assert_eq!((20, 300.0), dg.get_last_update_and_value_to(22));
 
     let v_at_t = dg.get_at_time(30);
-    println!("v: {}", v_at_t);
+    println!("t: {}, v: {}", v_at_t.0, v_at_t.1);
 }
 
 #[test]
