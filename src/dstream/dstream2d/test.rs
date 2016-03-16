@@ -2,6 +2,50 @@ extern crate nalgebra as na;
 
 use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
 use na::*;
+use petgraph::{Graph};
+use petgraph::graph::NodeIndex;
+use petgraph::algo::*;
+use petgraph::visit::*;
+
+#[test]
+fn test_graph_works_as_expected() {
+    println!("-----graph behavior");
+    let mut g = Graph::<(usize, usize), (usize, usize)>::new();
+
+    let n1 = g.add_node((0,0));
+    let n2 = g.add_node((0,1));
+    let n3 = g.add_node((1,0));
+    let n4 = g.add_node((1,4));
+    let n5 = g.add_node((1,5));
+
+    g.extend_with_edges(&[(n1, n2)]);
+    g.extend_with_edges(&[(n1, n3)]);
+    g.extend_with_edges(&[(n4, n5)]);
+
+    let edge_count = g.edge_count();
+    let node_count = g.node_count();
+
+    println!("test edge count: {}", edge_count);
+    println!("test node count: {}", node_count);
+
+    for n in g.node_indices() {
+        let nsu = g.neighbors_undirected(n);
+        let esu = g.edges(n);
+        println!("for node {}", n.index());
+        for nu in nsu {
+            println!("-- neighbor visited");
+        }
+    }
+
+    //http://math.stackexchange.com/questions/551889/checking-if-a-graph-is-fully-connected
+    println!("for graph with n nodes, then A^n, where A the adj matrix, should have no zero elements");
+    let adj_mat = g.adjacency_matrix();
+
+    fn convert_graph_adj_mat_to_nalgebra_mat2() {
+        //TODO
+    }
+
+}
 
 #[test]
 fn test_mark_and_remove_and_reset_spore_adics() {
@@ -34,12 +78,17 @@ fn test_is_a_grid_group() {
         updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
     let dg5 = DG {i: 1, j: 4,
         updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg6 = DG {i: 1, j: 2,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
 
-    let result = TheWorld::is_a_grid_group(vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone()));
+    let result = TheWorld::is_a_grid_group(vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg6.clone()));
     assert_eq!(true, result);
 
-    let result2 = TheWorld::is_a_grid_group(vec!(dg1, dg2, dg3, dg4, dg5));
+    let result2 = TheWorld::is_a_grid_group(vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone()));
     assert_eq!(false, result2);
+
+    let result3 = TheWorld::is_a_grid_group(vec!(dg1.clone(), dg2.clone(), dg3.clone(),));
+    assert_eq!(true, result3);
 }
 
 #[test]
