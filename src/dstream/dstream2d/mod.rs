@@ -120,11 +120,9 @@ impl TheWorld {
                 let idx_2 = n2.index();
                 if ! neighs_v.contains(&n2) {
                     (&mut m2)[(idx_1,idx_2)] = 0.0;
-
                 } else {
                     (&mut m2)[(idx_1,idx_2)] = 1.0;
                 }
-
                 if idx_1 == idx_2 {
                     (&mut m2)[(idx_1,idx_2)] = 1.0;
                 }
@@ -181,8 +179,18 @@ impl TheWorld {
     }
 
     fn is_inside_grid(dg1: DG, other_dgs: Vec<DG>) -> bool {
-        //TODO
-        false
+        let dgs_wo_1 = other_dgs.into_iter().filter(|dg| !(dg.i == dg1.i && dg.j == dg1.j));
+        let mut has_neighbor_i = false;
+        let mut has_neighbor_j = false;
+        for dg in dgs_wo_1 {
+            if TheWorld::are_neighbors_in_i(&dg1, &dg) { has_neighbor_i = true; }
+            if TheWorld::are_neighbors_in_j(&dg1, &dg) { has_neighbor_j = true; }
+        }
+        if has_neighbor_i && has_neighbor_j {
+            true
+        } else {
+            false
+        }
     }
 
     fn is_a_grid_group(dgs: Vec<DG>) -> bool {
@@ -198,11 +206,11 @@ impl TheWorld {
     }
 
     fn are_neighbors_in_i(dg1: &DG, dg2: &DG) -> bool {
-        (dg1.i == dg2.i) && (dg1.j as i32 - dg2.j as i32).abs() <= 1
+        (dg1.i == dg2.i) && (dg1.j as i32 - dg2.j as i32).abs() == 1
     }
 
     fn are_neighbors_in_j(dg1: &DG, dg2: &DG) -> bool {
-        (dg1.j == dg2.j) && (dg1.i as i32 - dg2.i as i32).abs() <= 1
+        (dg1.j == dg2.j) && (dg1.i as i32 - dg2.i as i32).abs() == 1
     }
 
     fn compute_grid_indxs(val: (f64, f64), i_range: (f64, f64), j_range: (f64, f64), i_bins: usize, j_bins: usize) -> Result<(usize, usize), String> {

@@ -69,10 +69,26 @@ fn test_is_a_grid_cluster() {
 }
 
 #[test]
-#[ignore]
-fn test_is_inside_grid() {
-    //TODO
-    assert!(false);
+
+fn test_is_inside_grid_1() {
+    let dg1 = DG {i: 0, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg2 = DG {i: 1, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg3 = DG {i: 0, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg4 = DG {i: 1, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg5 = DG {i: 1, j: 4,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg6 = DG {i: 1, j: 2,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+
+    let result_1 = TheWorld::is_inside_grid(dg1.clone(), vec![dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()]);
+    let result_2 = TheWorld::is_inside_grid(dg6.clone(), vec![dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()]);
+
+    assert_eq!(true, result_1);
+    assert_eq!(false, result_2);
 }
 
 #[test]
