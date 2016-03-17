@@ -139,29 +139,14 @@ impl TheWorld {
 
         let mut dmat_powered = dmat.clone();
         for d in 0..(dim-1) {
-            TheWorld::pretty_print_dmat(dmat_powered.clone());
+//            TheWorld::pretty_print_dmat(dmat_powered.clone());
             dmat_powered = dmat_powered.clone() * dmat.clone();
         }
         TheWorld::pretty_print_dmat(dmat_powered.clone());
         TheWorld::dmat_represents_fully_connected(dmat_powered)
     }
 
-    fn mark_and_remove_and_reset_spore_adics(t: u32, dgs: Vec<DG>) {
-        //prop 4.3: mark as sporadic; grids marked sporadic last t can be removed this t, or labeled as normal
-        //TODO
-    }
-
-    fn is_a_grid_cluster(dg1: DG, other_dgs: Vec<DG>) -> bool {
-        //TODO
-        false
-    }
-
-    fn is_inside_grid(dg1: DG, other_dgs: Vec<DG>) -> bool {
-        //TODO
-        false
-    }
-
-    fn is_a_grid_group(dgs: Vec<DG>) -> bool {
+    fn dgs_to_graph(dgs: Vec<DG>) ->  Graph<(usize, usize), (usize, usize)> {
         let mut neighbors_graph = Graph::<(usize, usize), (usize, usize)>::new();
 
         let dgs_and_nidxs: Vec<(DG, NodeIndex)> = dgs.clone().into_iter().map(|dg| (dg.clone(), neighbors_graph.add_node((dg.i, dg.j)))).collect();
@@ -182,6 +167,26 @@ impl TheWorld {
             }
         }
 
+        neighbors_graph.clone()
+    }
+
+    fn mark_and_remove_and_reset_spore_adics(t: u32, dgs: Vec<DG>) {
+        //prop 4.3: mark as sporadic; grids marked sporadic last t can be removed this t, or labeled as normal
+        //TODO
+    }
+
+    fn is_a_grid_cluster(dg1: DG, other_dgs: Vec<DG>) -> bool {
+        //TODO
+        false
+    }
+
+    fn is_inside_grid(dg1: DG, other_dgs: Vec<DG>) -> bool {
+        //TODO
+        false
+    }
+
+    fn is_a_grid_group(dgs: Vec<DG>) -> bool {
+        let neighbors_graph = TheWorld::dgs_to_graph(dgs.clone());
         let edge_count = neighbors_graph.edge_count();
         let node_count = neighbors_graph.node_count();
 

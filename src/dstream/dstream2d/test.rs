@@ -55,18 +55,21 @@ fn test_graph_disconnected() {
 }
 
 #[test]
+#[ignore]
 fn test_mark_and_remove_and_reset_spore_adics() {
     //TODO
     assert!(false);
 }
 
 #[test]
+#[ignore]
 fn test_is_a_grid_cluster() {
     //TODO
     assert!(false);
 }
 
 #[test]
+#[ignore]
 fn test_is_inside_grid() {
     //TODO
     assert!(false);
