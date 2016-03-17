@@ -15,10 +15,10 @@ fn pretty_print_dmat(dmat: DMat<f64>) {
         }
         println!(" ");
     }
+    println!("");
 }
 
 #[test]
-#[ignore]
 fn test_graph_connected() {
     let mut g = Graph::<(usize, usize), (usize, usize)>::new();
 
@@ -36,7 +36,6 @@ fn test_graph_connected() {
 
 
 #[test]
-#[ignore]
 fn test_graph_disconnected() {
     let mut g = Graph::<(usize, usize), (usize, usize)>::new();
 
@@ -56,21 +55,18 @@ fn test_graph_disconnected() {
 }
 
 #[test]
-#[ignore]
 fn test_mark_and_remove_and_reset_spore_adics() {
     //TODO
     assert!(false);
 }
 
 #[test]
-#[ignore]
 fn test_is_a_grid_cluster() {
     //TODO
     assert!(false);
 }
 
 #[test]
-#[ignore]
 fn test_is_inside_grid() {
     //TODO
     assert!(false);
@@ -78,7 +74,6 @@ fn test_is_inside_grid() {
 
 #[test]
 fn test_is_a_grid_group() {
-    //TODO
     let dg1 = DG {i: 0, j: 0,
         updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
     let dg2 = DG {i: 1, j: 0,
@@ -103,7 +98,6 @@ fn test_is_a_grid_group() {
 }
 
 #[test]
-#[ignore]
 fn test_compute_grid_indxs() {
     let loc = (-6., 6.);
     let i_rn = (-10.0, 10.0);
@@ -117,7 +111,6 @@ fn test_compute_grid_indxs() {
 }
 
 #[test]
-#[ignore]
 fn test_are_neighbors() {
     let dg1 = &DG {i: 0, j: 0,
         updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
@@ -132,7 +125,6 @@ fn test_are_neighbors() {
 }
 
 #[test]
-#[ignore]
 fn test_dg_update_and_get() {
     let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
     dg.update(1, vec!(100.0));
@@ -149,7 +141,6 @@ fn test_dg_update_and_get() {
 }
 
 #[test]
-#[ignore]
 fn test_removed_as_sporadic() {
     let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: vec!(1, 2, 3, 4),};
     assert_eq!(1, dg.get_last_time_removed_as_sporadic_to(2));
@@ -157,7 +148,6 @@ fn test_removed_as_sporadic() {
 }
 
 #[test]
-#[ignore]
 fn test_put_works() {
     let raw_data_1 = RawData{x: 1.0, y: -1.0, v: 123.45};
     let raw_data_2 = RawData{x: 5.0, y: -7.0, v: 23.45};
@@ -174,5 +164,4 @@ fn test_put_works() {
     let res1 = world.put(t, rd_vec.clone());
     let res2 = world.put(t + 1, rd_vec.clone());
     let res3 = world.put(t + 2, rd_vec.clone());
-
 }

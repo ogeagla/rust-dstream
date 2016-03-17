@@ -87,6 +87,7 @@ impl TheWorld {
             }
             println!(" ");
         }
+        println!("");
     }
 
     fn dmat_represents_fully_connected(dmat: DMat<f64>) -> bool {
@@ -130,7 +131,6 @@ impl TheWorld {
             }
         }
         assert_eq!(count, node_count);
-        println!("rows: {}, cols: {}", m2.nrows(), m2.ncols());
         m2
     }
 
@@ -162,46 +162,31 @@ impl TheWorld {
     }
 
     fn is_a_grid_group(dgs: Vec<DG>) -> bool {
-        //TODO
-        //def 3.4 of paper
-
         let mut neighbors_graph = Graph::<(usize, usize), (usize, usize)>::new();
 
-        let mut nodes: Vec<NodeIndex> = Vec::new();
+        let dgs_and_nidxs: Vec<(DG, NodeIndex)> = dgs.clone().into_iter().map(|dg| (dg.clone(), neighbors_graph.add_node((dg.i, dg.j)))).collect();
 
-        for dg in dgs.clone().into_iter() {
-            let idx = neighbors_graph.add_node((dg.i, dg.j));
-            nodes.push(idx);
-        }
+        for two_dgs_and_nidxs in dgs_and_nidxs.clone().into_iter().combinations_n(2) {
 
-        for the_dgs in dgs.clone().into_iter().combinations_n(2) {
+            let dg1 = two_dgs_and_nidxs[0].0.clone();
+            let dg2 = two_dgs_and_nidxs[1].0.clone();
+            let idx1 = two_dgs_and_nidxs[0].1;
+            let idx2 = two_dgs_and_nidxs[1].1;
+            let i1 = dg1.i;
+            let j1 = dg1.j;
+            let i2 = dg2.i;
+            let j2 = dg2.j;
 
-            let i1 = the_dgs[0].i;
-            let j1 = the_dgs[0].j;
-            let i2 = the_dgs[1].i;
-            let j2 = the_dgs[1].j;
-
-            let r_neighbors = TheWorld::are_neighbors(&the_dgs[0], &the_dgs[1]);
-            println!("checking if pair are neighbors: {} {} and {} {} => {}", i1, j1, i2, j2, r_neighbors);
-
-            //TODO iterate instead on node indices zipped with dgs
-            let node1 = neighbors_graph.add_node((i1, j1));
-            let node2 = neighbors_graph.add_node((i2, j2));
-
-            if r_neighbors {
-                neighbors_graph.extend_with_edges(&[(node1, node2),]);
+            if TheWorld::are_neighbors(&dg1, &dg2) {
+                neighbors_graph.extend_with_edges(&[(idx1, idx2)]);
             }
         }
 
         let edge_count = neighbors_graph.edge_count();
         let node_count = neighbors_graph.node_count();
 
-        println!("edge count: {}", edge_count);
-        println!("node count: {}", node_count);
-
-        TheWorld::graph_is_fully_connected(neighbors_graph, edge_count)
+        TheWorld::graph_is_fully_connected(neighbors_graph, node_count)
     }
-
 
     fn are_neighbors(dg1: &DG, dg2: &DG) -> bool {
         TheWorld::are_neighbors_in_i(dg1, dg2) || TheWorld::are_neighbors_in_j(dg1, dg2)
