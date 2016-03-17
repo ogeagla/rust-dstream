@@ -79,6 +79,73 @@ impl Default for DStreamProps {
 
 impl TheWorld {
 
+    fn pretty_print_dmat(dmat: DMat<f64>) {
+        for r in 0..dmat.nrows() {
+            for c in 0..dmat.ncols() {
+                let elem = dmat[(r, c)];
+                print!("{}, ", elem);
+            }
+            println!(" ");
+        }
+    }
+
+    fn dmat_represents_fully_connected(dmat: DMat<f64>) -> bool {
+        for r in 0..dmat.nrows() {
+            for c in 0..dmat.ncols() {
+                let elem = dmat[(r, c)];
+                if elem == 0.0 {
+                    return false
+                }
+            }
+        }
+        true
+    }
+
+    fn convert_graph_adj_mat_to_nalgebra_mat(g: Graph<(usize, usize), (usize, usize)>, rows: usize, cols: usize) -> DMat<f64> {
+        let mut m2 : DMat<f64> = DMat::new_zeros(rows, cols);
+        let count = rows * rows;
+        let mut node_count = 0;
+
+        for n1 in g.node_indices() {
+            let mut neighs_v = Vec::new();
+            let neighs = g.neighbors_undirected(n1);
+            //TODO ugly way to covert iterator to vector
+            for neigh in neighs {
+                neighs_v.push(neigh);
+            }
+            let idx_1 = n1.index();
+            for n2 in g.node_indices() {
+                node_count += 1;
+                let idx_2 = n2.index();
+                if ! neighs_v.contains(&n2) {
+                    (&mut m2)[(idx_1,idx_2)] = 0.0;
+
+                } else {
+                    (&mut m2)[(idx_1,idx_2)] = 1.0;
+                }
+
+                if idx_1 == idx_2 {
+                    (&mut m2)[(idx_1,idx_2)] = 1.0;
+                }
+            }
+        }
+        assert_eq!(count, node_count);
+        println!("rows: {}, cols: {}", m2.nrows(), m2.ncols());
+        m2
+    }
+
+    fn graph_is_fully_connected(g: Graph<(usize, usize), (usize, usize)>, dim: usize) -> bool {
+        let dmat = TheWorld::convert_graph_adj_mat_to_nalgebra_mat(g, dim, dim);
+
+        let mut dmat_powered = dmat.clone();
+        for d in 0..(dim-1) {
+            TheWorld::pretty_print_dmat(dmat_powered.clone());
+            dmat_powered = dmat_powered.clone() * dmat.clone();
+        }
+        TheWorld::pretty_print_dmat(dmat_powered.clone());
+        TheWorld::dmat_represents_fully_connected(dmat_powered)
+    }
+
     fn mark_and_remove_and_reset_spore_adics(t: u32, dgs: Vec<DG>) {
         //prop 4.3: mark as sporadic; grids marked sporadic last t can be removed this t, or labeled as normal
         //TODO
@@ -117,6 +184,7 @@ impl TheWorld {
             let r_neighbors = TheWorld::are_neighbors(&the_dgs[0], &the_dgs[1]);
             println!("checking if pair are neighbors: {} {} and {} {} => {}", i1, j1, i2, j2, r_neighbors);
 
+            //TODO iterate instead on node indices zipped with dgs
             let node1 = neighbors_graph.add_node((i1, j1));
             let node2 = neighbors_graph.add_node((i2, j2));
 
@@ -131,23 +199,7 @@ impl TheWorld {
         println!("edge count: {}", edge_count);
         println!("node count: {}", node_count);
 
-
-        for n in nodes.into_iter() {
-            let neighbors = neighbors_graph.neighbors_undirected(n);
-            let size_hint = neighbors.size_hint();
-            for neighbor in neighbors {
-                println!("neighbor...");
-            }
-            println!("  neighbors size: {}", size_hint.0);
-            match size_hint.1 {
-              Some(s) => println!(" more size hint: {}", s),
-              None => (),
-            };
-        }
-
-        let is_it = (edge_count + 1) >= dgs.len();
-        println!("-> {}", is_it);
-        is_it
+        TheWorld::graph_is_fully_connected(neighbors_graph, edge_count)
     }
 
 
