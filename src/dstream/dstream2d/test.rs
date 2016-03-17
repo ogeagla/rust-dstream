@@ -1,7 +1,7 @@
 extern crate nalgebra as na;
 
 use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
-use na::{Mat2, Vec2, Row, DMat};
+use na::*;
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::algo::*;
@@ -41,33 +41,39 @@ fn test_graph_works_as_expected() {
     println!("for graph with n nodes, then A^n, where A the adj matrix, should have no zero elements");
     let adj_mat = g.adjacency_matrix();
 
-    fn convert_graph_adj_mat_to_nalgebra_mat() -> DMat<f64> {
+    let dmat = convert_graph_adj_mat_to_nalgebra_mat(g, 5, 5);
+    let dmat_to_the_three_FO_FIFFFF = dmat.clone() * dmat.clone() * dmat.clone() * dmat.clone() * dmat.clone();
 
-        let g = Graph::<(usize, usize), (usize, usize)>::new();
-        //TODO size
-        let mut m2 : DMat<f64> = DMat::new_zeros(10,10);
+    fn convert_graph_adj_mat_to_nalgebra_mat(g: Graph<(usize, usize), (usize, usize)>, rows: usize, cols: usize) -> DMat<f64> {
 
+        let mut m2 : DMat<f64> = DMat::new_zeros(rows, cols);
+        let count = rows * rows;
+        let mut node_count = 0;
 
         for n1 in g.node_indices() {
+            node_count += 1;
             let mut neighs_v = Vec::new();
             let neighs = g.neighbors_undirected(n1);
             //TODO ugly way to covert iterator to vector
             for neigh in neighs {
                 neighs_v.push(neigh);
             }
-
+            let idx_1 = n1.index();
             for n2 in g.node_indices() {
+                let idx_2 = n2.index();
                 if ! neighs_v.contains(&n2) {
                     println!("does not contain");
                     //TODO the indices:
-                    (&mut m2)[(0,0)] = 1.0;
+                    (&mut m2)[(idx_1,idx_2)] = 0.0;
 
                 } else {
                     //TODO the indices:
-                    (&mut m2)[(0,0)] = 0.0;
+                    (&mut m2)[(idx_1,idx_2)] = 1.0;
                 }
             }
         }
+        assert_eq!(count, node_count);
+        println!("rows: {}, cols: {}", m2.nrows(), m2.ncols());
         m2
     }
 }
