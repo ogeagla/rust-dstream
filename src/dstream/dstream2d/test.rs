@@ -1,7 +1,7 @@
 extern crate nalgebra as na;
 
 use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
-use na::{Mat2, Vec2, Row};
+use na::{Mat2, Vec2, Row, DMat};
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::algo::*;
@@ -41,10 +41,12 @@ fn test_graph_works_as_expected() {
     println!("for graph with n nodes, then A^n, where A the adj matrix, should have no zero elements");
     let adj_mat = g.adjacency_matrix();
 
-    fn convert_graph_adj_mat_to_nalgebra_mat2() {
-        //TODO
+    fn convert_graph_adj_mat_to_nalgebra_mat() -> DMat<f64> {
+
         let g = Graph::<(usize, usize), (usize, usize)>::new();
-        let mut m2 : Mat2<f64> = na::one();
+        //TODO size
+        let mut m2 : DMat<f64> = DMat::new_zeros(10,10);
+
 
         for n1 in g.node_indices() {
             let mut neighs_v = Vec::new();
@@ -54,26 +56,20 @@ fn test_graph_works_as_expected() {
                 neighs_v.push(neigh);
             }
 
-            let mut the_row: Vec<f64> = Vec::new();
-            let mut the_vec_rows: Vec2<f64> = na::zero();
-
             for n2 in g.node_indices() {
                 if ! neighs_v.contains(&n2) {
                     println!("does not contain");
-                    the_row.push(1.0);
-                    *the_vec_rows.index_mut(1 as usize) = 1.0;
+                    //TODO the indices:
+                    (&mut m2)[(0,0)] = 1.0;
 
                 } else {
-                    the_row.push(0.0);
+                    //TODO the indices:
+                    (&mut m2)[(0,0)] = 0.0;
                 }
-
             }
-//            m2.set_row(n1.index(), the_row);
         }
-
-
+        m2
     }
-
 }
 
 #[test]
