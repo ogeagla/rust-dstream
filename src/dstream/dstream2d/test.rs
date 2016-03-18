@@ -195,7 +195,7 @@ fn test_put_works() {
     let t = 1;
 
     let default_vec : Vec<GridPoint> = Vec::new();
-    let mut world = TheWorld{g_vec: Vec::new(), g_label_ts_map: HashMap::new()};
+    let mut world = TheWorld{g_vec: Vec::new()};
     world.init(default_vec);
     let res1 = world.put(t, rd_vec.clone());
     let res2 = world.put(t + 1, rd_vec.clone());

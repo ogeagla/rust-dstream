@@ -60,7 +60,6 @@ struct GridData {
 }
 struct TheWorld {
     g_vec: Vec<((usize, usize), DG)>,
-    g_label_ts_map: HashMap<(u32, usize, usize), GridLabel>,
 }
 
 impl Default for DStreamProps {
@@ -79,23 +78,6 @@ impl Default for DStreamProps {
 }
 
 impl TheWorld {
-
-    fn compute_label_at_time(&self, t: u32, i: usize, j: usize) -> GridLabel {
-        //TODO
-        //use the DG.get_label_at_time for a vec of DGs...
-        GridLabel::Sparse
-    }
-
-    fn get_grid_label_at_time(&mut self, t: u32, i: usize, j: usize) -> GridLabel {
-        match self.g_label_ts_map.clone().get(&(t, i, j)) {
-            Some(label) => label.clone(),
-            None => {
-                let the_label = self.compute_label_at_time(t, i, j);
-                self.g_label_ts_map.insert((t, i, j), the_label.clone());
-                the_label
-            },
-        }
-    }
 
     fn pretty_print_dmat(dmat: DMat<f64>) {
         for r in 0..dmat.nrows() {
@@ -261,7 +243,7 @@ impl TheWorld {
         Ok((i_number_of_sizes, j_number_of_sizes))
     }
 
-    fn init(&mut self, def_bucket: Vec<GridPoint>) {
+    pub fn init(&mut self, def_bucket: Vec<GridPoint>) {
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
         for i in 0..props.i_bins {
@@ -285,7 +267,7 @@ impl TheWorld {
         self.g_vec.push((idx, dg));
         Ok(())
     }
-    fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
+    pub fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
         fn validate_range(loc2d: (f64, f64)) -> bool {
             let props: DStreamProps = DStreamProps { ..Default::default() };
