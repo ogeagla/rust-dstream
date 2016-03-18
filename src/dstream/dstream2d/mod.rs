@@ -60,6 +60,7 @@ struct GridData {
 }
 struct TheWorld {
     g_vec: Vec<((usize, usize), DG)>,
+    g_label_ts_map: HashMap<(u32, usize, usize), Vec<GridLabel>>,
 }
 
 impl Default for DStreamProps {
@@ -132,7 +133,8 @@ impl TheWorld {
         m2
     }
 
-    fn graph_is_fully_connected(g: Graph<(usize, usize), (usize, usize)>, dim: usize) -> bool {
+    fn graph_is_fully_connected(g: Graph<(usize, usize), (usize, usize)>) -> bool {
+        let dim = g.node_count();
         let dmat = TheWorld::convert_graph_adj_mat_to_nalgebra_mat(g, dim, dim);
 
         let mut dmat_powered = dmat.clone();
@@ -215,7 +217,7 @@ impl TheWorld {
         let edge_count = neighbors_graph.edge_count();
         let node_count = neighbors_graph.node_count();
 
-        TheWorld::graph_is_fully_connected(neighbors_graph, node_count)
+        TheWorld::graph_is_fully_connected(neighbors_graph)
     }
 
     fn are_neighbors(dg1: &DG, dg2: &DG) -> bool {

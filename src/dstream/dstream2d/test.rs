@@ -6,6 +6,7 @@ use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::algo::*;
 use petgraph::visit::*;
+use std::collections::HashMap;
 
 fn pretty_print_dmat(dmat: DMat<f64>) {
     for r in 0..dmat.nrows() {
@@ -29,9 +30,7 @@ fn test_graph_connected() {
     g.extend_with_edges(&[(n1, n2)]);
     g.extend_with_edges(&[(n1, n3)]);
 
-    let dim = 3;
-
-    assert_eq!(true, TheWorld::graph_is_fully_connected(g, dim));
+    assert_eq!(true, TheWorld::graph_is_fully_connected(g));
 }
 
 
@@ -49,9 +48,7 @@ fn test_graph_disconnected() {
     g.extend_with_edges(&[(n1, n3)]);
     g.extend_with_edges(&[(n4, n5)]);
 
-    let dim = 5;
-
-    assert_eq!(false, TheWorld::graph_is_fully_connected(g, dim));
+    assert_eq!(false, TheWorld::graph_is_fully_connected(g));
 }
 
 #[test]
@@ -64,7 +61,7 @@ fn test_mark_and_remove_and_reset_spore_adics() {
 #[test]
 #[ignore]
 fn test_is_a_grid_cluster() {
-    //TODO
+    //TODO, this is hard
     assert!(false);
 }
 
@@ -198,7 +195,7 @@ fn test_put_works() {
     let t = 1;
 
     let default_vec : Vec<GridPoint> = Vec::new();
-    let mut world = TheWorld{g_vec: Vec::new()};
+    let mut world = TheWorld{g_vec: Vec::new(), g_label_ts_map: HashMap::new()};
     world.init(default_vec);
     let res1 = world.put(t, rd_vec.clone());
     let res2 = world.put(t + 1, rd_vec.clone());
