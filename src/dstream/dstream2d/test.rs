@@ -1,6 +1,6 @@
 extern crate nalgebra as na;
 
-use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint, Runner};
+use dstream::dstream2d::*;
 use na::*;
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
@@ -210,4 +210,24 @@ fn test_put_time_updates_work() {
 fn runs() {
 
     Runner::run_world();
+}
+
+#[test]
+fn test_labels_changed_between() {
+
+    let mut map1: HashMap<(usize, usize), GridLabel> = HashMap::new();
+    map1.insert((0, 1), GridLabel::Dense);
+    map1.insert((1, 1), GridLabel::Transitional);
+
+    let mut map2: HashMap<(usize, usize), GridLabel> = HashMap::new();
+    map2.insert((0, 1), GridLabel::Dense);
+    map2.insert((1, 1), GridLabel::Transitional);
+
+    let mut map3: HashMap<(usize, usize), GridLabel> = HashMap::new();
+    map3.insert((0, 1), GridLabel::Dense);
+    map3.insert((1, 1), GridLabel::Sparse);
+
+    assert_eq!(false, TheWorld::labels_changed_between(map1.clone(), map2));
+    assert_eq!(true, TheWorld::labels_changed_between(map1, map3));
+
 }

@@ -22,6 +22,7 @@ pub struct DG {
 
 #[derive(Debug)]
 #[derive(Clone)]
+#[derive(PartialEq)]
 pub enum GridLabel { Dense, Sparse, Transitional, }
 
 #[derive(Debug)]
@@ -105,11 +106,12 @@ impl Runner {
 
             if (t + 1) % props.gap_time == 0 {
                 if has_initialized {
-                    println!("-- adjusting clusters")
+                    println!("-- adjusting clusters");
+                    let result = world.adjust_clustering();
                 } else {
                     println!("-- initializing clusters");
                     let result = world.initialize_clustering();
-                    has_initialized = true
+                    has_initialized = true;
                 }
             }
         }
@@ -135,6 +137,52 @@ impl TheWorld {
             the_map.insert((dg.i, dg.j), dg.get_grid_label_at_time(t));
         });
         the_map
+    }
+
+    fn labels_changed_between(labels1: HashMap<(usize, usize), GridLabel>, labels2: HashMap<(usize, usize), GridLabel>) -> bool {
+
+        if labels1.len() != labels2.len() { return true }
+
+        for (idxs, label) in labels1 {
+            match labels2.get(&idxs) {
+                None => {
+                    return true
+                },
+                Some(l) => if label != *l {
+                    return true
+                },
+            }
+        }
+        false
+    }
+
+
+    pub fn adjust_clustering(&mut self) -> Result<(), String> {
+        //update the density of all grids in grid_list
+        /*
+        foreach grid g whose attribute (dense/sparse/transitional) is changed since last call to adjust_clustering()
+            if g is a sparse grid
+                delete g from its cluster c, label g as NO_CLASS
+                if (c becomes unconnected) split c into two clusters
+            else if g is a dense grid
+                among all neighboring grids of g, find out the grid h whoe cluster c_h has the largest size
+                if h is a dense grid
+                    if (g is labelled as NO_CLASS) label g as in c_h
+                    else if (g is in cluster c and |c| > |c_h|)
+                        label all grids in c_h as in c
+                    else if (g is in cluster c and |c| <= |c_h|)
+                        label all grids in c as in c_h
+                else if h is a transitional grid
+                    if ((g is NO_CLASS) and (h is an outside grid if g is added to c_h)) label g as in c_h
+                    else if (g is in cluster c and |c| >= |c_h|)
+                        move h from cluster c_h to c
+            else if (g is transitional grid)
+                among neighboring clusters of g, find the largest one c'
+                satisfying that g is an outside grid if added to it and
+                label g as in c'
+        */
+
+        Ok(())
     }
 
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
@@ -452,31 +500,3 @@ impl DG {
         props.lambda.powf((t_n - t_l) as f64)
     }
  }
-
-pub fn adjust_clustering(grid_list: Vec<RawData>) -> Result<(), String> {
-    //update the density of all grids in grid_list
-    /*
-    foreach grid g whose attribute (dense/sparse/transitional) is changed since last call to adjust_clustering()
-        if g is a sparse grid
-            delete g from its cluster c, label g as NO_CLASS
-            if (c becomes unconnected) split c into two clusters
-        else if g is a dense grid
-            among all neighboring grids of g, find out the grid h whoe cluster c_h has the largest size
-            if h is a dense grid
-                if (g is labelled as NO_CLASS) label g as in c_h
-                else if (g is in cluster c and |c| > |c_h|)
-                    label all grids in c_h as in c
-                else if (g is in cluster c and |c| <= |c_h|)
-                    label all grids in c as in c_h
-            else if h is a transitional grid
-                if ((g is NO_CLASS) and (h is an outside grid if g is added to c_h)) label g as in c_h
-                else if (g is in cluster c and |c| >= |c_h|)
-                    move h from cluster c_h to c
-        else if (g is transitional grid)
-            among neighboring clusters of g, find the largest one c'
-            satisfying that g is an outside grid if added to it and
-            label g as in c'
-    */
-
-    Ok(())
-}
