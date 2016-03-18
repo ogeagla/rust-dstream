@@ -129,6 +129,14 @@ impl TheWorld {
         println!("");
     }
 
+    fn get_labels_for_time(t: u32, dgs: Vec<DG>) -> HashMap<(usize, usize), GridLabel> {
+        let mut the_map = HashMap::new();
+        dgs.into_iter().map(|dg| {
+            the_map.insert((dg.i, dg.j), dg.get_grid_label_at_time(t));
+        });
+        the_map
+    }
+
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
         //update density of all grids in grid_list
         //assign each dense grid to a distinct cluster
