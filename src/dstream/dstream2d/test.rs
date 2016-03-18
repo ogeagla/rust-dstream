@@ -1,6 +1,6 @@
 extern crate nalgebra as na;
 
-use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint};
+use dstream::dstream2d::{TheWorld, DG, RawData, GridPoint, Runner};
 use na::*;
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
@@ -184,7 +184,7 @@ fn test_removed_as_sporadic() {
 }
 
 #[test]
-fn test_put_works() {
+fn test_put_time_updates_work() {
     let raw_data_1 = RawData{x: 1.0, y: -1.0, v: 123.45};
     let raw_data_2 = RawData{x: 5.0, y: -7.0, v: 23.45};
     let raw_data_3 = RawData{x: 5.0, y: -7.0, v: 83.45};
@@ -195,9 +195,19 @@ fn test_put_works() {
     let t = 1;
 
     let default_vec : Vec<GridPoint> = Vec::new();
-    let mut world = TheWorld{g_vec: Vec::new()};
+    let mut world = TheWorld{g_vec: Vec::new(), timeline: Vec::new(), current_time: 0};
     world.init(default_vec);
     let res1 = world.put(t, rd_vec.clone());
+    assert_eq!(t, world.current_time);
     let res2 = world.put(t + 1, rd_vec.clone());
+    assert_eq!(t + 1, world.current_time);
     let res3 = world.put(t + 2, rd_vec.clone());
+    assert_eq!(t + 2, world.current_time);
+    assert_eq!(vec!(t, t+1, t+2), world.timeline);
+}
+
+#[test]
+fn runs() {
+
+    Runner::run_world();
 }

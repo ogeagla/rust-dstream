@@ -7,6 +7,7 @@ use std::rc::Rc;
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::algo::*;
+use rand;
 
 mod test;
 
@@ -36,6 +37,7 @@ pub struct DStreamProps {
     j_bins: usize,
     i_range: (f64, f64),
     j_range: (f64, f64),
+    gap_time: u32,
 }
 
 #[derive(Clone)]
@@ -60,6 +62,8 @@ pub struct GridData {
 }
 pub struct TheWorld {
     g_vec: Vec<((usize, usize), DG)>,
+    timeline: Vec<u32>,
+    current_time: u32,
 }
 
 impl Default for DStreamProps {
@@ -69,10 +73,45 @@ impl Default for DStreamProps {
             c_l: 0.8,
             lambda: 0.998,
             beta: 0.3,
-            i_bins: 10 as usize,
-            j_bins: 10 as usize,
+            i_bins: 100 as usize,
+            j_bins: 100 as usize,
             i_range: (-10.0, 10.0),
             j_range: (-10.0, 10.0),
+            gap_time: 5,
+        }
+    }
+}
+
+pub struct Runner;
+
+impl Runner {
+    pub fn run_world() {
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+
+        let default_vec : Vec<GridPoint> = Vec::new();
+        let mut world = TheWorld{g_vec: Vec::new(), timeline: Vec::new(), current_time: 0};
+        world.init(default_vec);
+
+        let mut has_initialized = false;
+        for t in 0..100 {
+
+            let r_x = rand::random::<f64>();
+            let r_y = rand::random::<f64>();
+            let v = rand::random::<f64>();
+
+
+            let rd_1 = RawData { x: r_x, y: r_y, v: v};
+            println!("putting rand raw data: ({}, {}) -> {}", r_x, r_y, v);
+            let res = world.put(t, vec!(rd_1));
+
+            if t % props.gap_time == 0 {
+                if has_initialized {
+                    let result = world.initialize_clustering(Vec::new());
+                } else {
+
+                    has_initialized = true
+                }
+            }
         }
     }
 }
@@ -88,6 +127,24 @@ impl TheWorld {
             println!(" ");
         }
         println!("");
+    }
+
+    pub fn initialize_clustering(&self, grid_list: Vec<RawData>) -> Result<(), String> {
+        //update density of all grids in grid_list
+        //assign each dense grid to a distinct cluster
+        //label all other grids as NO_CLASS; bad grids!
+        /*
+        do until no change in cluster labels
+              foreach cluster c
+                foreach outside grid g of c
+                    foreach neighboring grid h of g
+                        if h belongs to cluster c'
+                            if |c| > |c'| label all grids in c' as c
+                            else label all grids in c as c'
+                        else if (h is translational) label h as in c
+        end do
+        */
+        Ok(())
     }
 
     fn dmat_represents_fully_connected(dmat: DMat<f64>) -> bool {
@@ -281,6 +338,13 @@ impl TheWorld {
     }
     pub fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
+        self.current_time = t;
+        if ! self.timeline.contains(&t) {
+            self.timeline.push(t);
+        } else {
+            return Err(String::from("time has already been put"));
+        }
+
         fn validate_range(loc2d: (f64, f64)) -> bool {
             let props: DStreamProps = DStreamProps { ..Default::default() };
             if (loc2d.0 <= props.i_range.1) &&
@@ -324,7 +388,7 @@ impl TheWorld {
 
 impl DG {
 
-    fn is_sporadic (&self, t: u32) -> bool {
+    pub fn is_sporadic (&self, t: u32) -> bool {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let last_update_t_and_v = self.get_last_update_and_value_to(t);
         let d_t = self.get_at_time(t).1;
@@ -340,7 +404,7 @@ impl DG {
             _ => false
         }
     }
-    fn get_grid_label_at_time(&self, t:u32) -> GridLabel {
+    pub fn get_grid_label_at_time(&self, t:u32) -> GridLabel {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let n_size = (self.i * self.j) as f64;
         let d_m = props.c_m / (n_size * (1.0 - props.lambda));
@@ -355,23 +419,23 @@ impl DG {
             GridLabel::Transitional
         }
     }
-    fn get_at_time(&self, t: u32) -> (u32, f64) {
+    pub fn get_at_time(&self, t: u32) -> (u32, f64) {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
         let coeff = self.coeff(t, last_update_time_and_value.0);
         (last_update_time_and_value.0, coeff * last_update_time_and_value.1 + 1.0)
     }
-    fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
+    pub fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
         let sum = vals.clone().iter().fold(0.0, |sum, x| sum + x);
         self.updates_and_vals.push(GridPoint {t: t, v: sum});
         Ok(())
     }
-    fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
+    pub fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
         let a: GridPoint = self.updates_and_vals.clone().into_iter().filter(|bp| bp.t < t).max_by_key(|bp| bp.t).unwrap();
         let t_l = a.t;
         let v_l = a.v;
         (t_l, v_l)
     }
-    fn get_last_time_removed_as_sporadic_to(&self, t: u32) -> u32 {
+    pub fn get_last_time_removed_as_sporadic_to(&self, t: u32) -> u32 {
         let t = self.removed_as_spore_adic.clone().into_iter().filter(|&the_t| the_t < t).max().unwrap();
         t
     }
@@ -380,25 +444,6 @@ impl DG {
         props.lambda.powf((t_n - t_l) as f64)
     }
  }
-
-pub fn initialize_clustering(grid_list: Vec<RawData>) -> Result<(), String> {
-    //update density of all grids in grid_list
-    //assign each dense grid to a distinct cluster
-    //label all other grids as NO_CLASS; bad grids!
-    /*
-    do until no change in cluster labels
-          foreach cluster c
-            foreach outside grid g of c
-                foreach neighboring grid h of g
-                    if h belongs to cluster c'
-                        if |c| > |c'| label all grids in c' as c
-                        else label all grids in c as c'
-                    else if (h is translational) label h as in c
-    end do
-    */
-    Ok(())
-}
-
 
 pub fn adjust_clustering(grid_list: Vec<RawData>) -> Result<(), String> {
     //update the density of all grids in grid_list
