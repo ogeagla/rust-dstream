@@ -12,7 +12,7 @@ mod test;
 
 #[derive(Debug)]
 #[derive(Clone)]
-struct DG {
+pub struct DG {
     i: usize,
     j: usize,
     updates_and_vals: Vec<GridPoint>,
@@ -21,11 +21,11 @@ struct DG {
 
 #[derive(Debug)]
 #[derive(Clone)]
-enum GridLabel { Dense, Sparse, Transitional, }
+pub enum GridLabel { Dense, Sparse, Transitional, }
 
 #[derive(Debug)]
 #[derive(Clone)]
-enum GridStatus { Sporadic, Normal, }
+pub enum GridStatus { Sporadic, Normal, }
 
 pub struct DStreamProps {
     c_m: f64,
@@ -48,17 +48,17 @@ pub struct RawData {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Copy)]
-struct GridPoint {
+pub struct GridPoint {
     t: u32,
     v: f64,
 }
 #[derive(Clone)]
-struct GridData {
+pub struct GridData {
     i: usize,
     j: usize,
     v: f64,
 }
-struct TheWorld {
+pub struct TheWorld {
     g_vec: Vec<((usize, usize), DG)>,
 }
 
@@ -132,13 +132,25 @@ impl TheWorld {
         m2
     }
 
-    fn graph_is_fully_connected(g: Graph<(usize, usize), (usize, usize)>) -> bool {
+    ///
+    ///   Here we take the adjacency matrix, `A`, and compute
+    /// ```A' = A^d```
+    /// where `d` is the number of nodes in the graph.
+    ///   If any elements of `A'` are zero, then visitation has
+    /// not occurred after `d` moves on the graph for some
+    /// combinations, therefore graph is not fully connected,
+    /// and return `false`.
+    ///   This is because `d` is the most number of node hops
+    /// required to visit all neighbors in a graph with node
+    /// count `d`.
+    ///
+    pub fn graph_is_fully_connected(g: Graph<(usize, usize), (usize, usize)>) -> bool {
         let dim = g.node_count();
         let dmat = TheWorld::convert_graph_adj_mat_to_nalgebra_mat(g, dim, dim);
 
         let mut dmat_powered = dmat.clone();
+
         for d in 0..(dim-1) {
-//            TheWorld::pretty_print_dmat(dmat_powered.clone());
             dmat_powered = dmat_powered.clone() * dmat.clone();
         }
         TheWorld::pretty_print_dmat(dmat_powered.clone());
