@@ -1,5 +1,5 @@
 use na::{Mat2, DMat};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::num::*;
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -23,6 +23,8 @@ pub struct DG {
 #[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq)]
+#[derive(Eq)]
+#[derive(Hash)]
 pub enum GridLabel { Dense, Sparse, Transitional, }
 
 #[derive(Debug)]
@@ -140,9 +142,7 @@ impl TheWorld {
     }
 
     fn labels_changed_between(labels1: HashMap<(usize, usize), GridLabel>, labels2: HashMap<(usize, usize), GridLabel>) -> bool {
-
         if labels1.len() != labels2.len() { return true }
-
         for (idxs, label) in labels1 {
             match labels2.get(&idxs) {
                 None => {
@@ -156,6 +156,49 @@ impl TheWorld {
         false
     }
 
+    fn which_labels_changed_between(labels1: HashMap<(usize, usize), GridLabel>, labels2: HashMap<(usize, usize), GridLabel>) -> Option<Vec<(usize, usize)>> {
+
+        let mut keys_set1 = HashSet::new();
+        for (k, v) in labels1.clone() {
+            keys_set1.insert(k);
+        }
+
+        let mut keys_set2 = HashSet::new();
+        for (k, v) in labels2.clone() {
+            keys_set2.insert(k);
+        }
+
+        let keys_intersection: HashSet<_> = keys_set1.intersection(&keys_set2).collect();
+        let keys_union: HashSet<_> = keys_set1.union(&keys_set2).collect();
+
+        if labels1.len() == labels2.len() && keys_intersection.len() == labels1.len() {
+            //keys are identical
+            let mut the_changed: Vec<(usize, usize)> = Vec::new();
+            for (k, v) in labels1.clone() {
+                let val2 = labels2.get(&k).unwrap();
+                if *val2 != v {
+                    the_changed.push(k);
+                }
+            }
+            if the_changed.len() != 0 { return Some(the_changed) }
+        } else {
+            let diff_keys: HashSet<_> = keys_union.symmetric_difference(&keys_intersection).collect();
+            let mut the_changed: Vec<(usize, usize)> = Vec::new();
+            for k in keys_intersection.clone().into_iter() {
+                let val1 = labels1.get(&k).unwrap();
+                let val2 = labels2.get(&k).unwrap();
+                if *val1 != *val2 {
+                    the_changed.push(*k);
+                }
+            }
+            for k in diff_keys {
+                the_changed.push(**k);
+            }
+            return Some(the_changed);
+        }
+
+        None
+    }
 
     pub fn adjust_clustering(&mut self) -> Result<(), String> {
         //update the density of all grids in grid_list

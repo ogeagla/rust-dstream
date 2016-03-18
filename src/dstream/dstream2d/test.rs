@@ -227,7 +227,30 @@ fn test_labels_changed_between() {
     map3.insert((0, 1), GridLabel::Dense);
     map3.insert((1, 1), GridLabel::Sparse);
 
-    assert_eq!(false, TheWorld::labels_changed_between(map1.clone(), map2));
-    assert_eq!(true, TheWorld::labels_changed_between(map1, map3));
+    assert_eq!(false, TheWorld::labels_changed_between(map1.clone(), map2.clone()));
+    assert_eq!(false, TheWorld::labels_changed_between(map2.clone(), map1.clone()));
+    assert_eq!(true, TheWorld::labels_changed_between(map1.clone(), map3.clone()));
+    assert_eq!(true, TheWorld::labels_changed_between(map3.clone(), map1.clone()));
 
+}
+
+#[test]
+fn test_which_labels_changed_between() {
+
+    let mut map1: HashMap<(usize, usize), GridLabel> = HashMap::new();
+    map1.insert((0, 1), GridLabel::Dense);
+    map1.insert((1, 1), GridLabel::Transitional);
+
+    let mut map2: HashMap<(usize, usize), GridLabel> = HashMap::new();
+    map2.insert((0, 1), GridLabel::Dense);
+    map2.insert((1, 1), GridLabel::Transitional);
+
+    let mut map3: HashMap<(usize, usize), GridLabel> = HashMap::new();
+    map3.insert((0, 1), GridLabel::Dense);
+    map3.insert((1, 1), GridLabel::Sparse);
+
+    assert_eq!(None, TheWorld::which_labels_changed_between(map1.clone(), map2.clone()));
+    assert_eq!(None, TheWorld::which_labels_changed_between(map2.clone(), map1.clone()));
+    assert_eq!(Some(vec!((1,1))), TheWorld::which_labels_changed_between(map1.clone(), map3.clone()));
+    assert_eq!(Some(vec!((1,1))), TheWorld::which_labels_changed_between(map3.clone(), map1.clone()));
 }
