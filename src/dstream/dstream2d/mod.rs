@@ -60,7 +60,7 @@ struct GridData {
 }
 struct TheWorld {
     g_vec: Vec<((usize, usize), DG)>,
-    g_label_ts_map: HashMap<(u32, usize, usize), Vec<GridLabel>>,
+    g_label_ts_map: HashMap<(u32, usize, usize), GridLabel>,
 }
 
 impl Default for DStreamProps {
@@ -79,6 +79,23 @@ impl Default for DStreamProps {
 }
 
 impl TheWorld {
+
+    fn compute_label_at_time(&self, t: u32, i: usize, j: usize) -> GridLabel {
+        //TODO
+        //use the DG.get_label_at_time for a vec of DGs...
+        GridLabel::Sparse
+    }
+
+    fn get_grid_label_at_time(&mut self, t: u32, i: usize, j: usize) -> GridLabel {
+        match self.g_label_ts_map.clone().get(&(t, i, j)) {
+            Some(label) => label.clone(),
+            None => {
+                let the_label = self.compute_label_at_time(t, i, j);
+                self.g_label_ts_map.insert((t, i, j), the_label.clone());
+                the_label
+            },
+        }
+    }
 
     fn pretty_print_dmat(dmat: DMat<f64>) {
         for r in 0..dmat.nrows() {
