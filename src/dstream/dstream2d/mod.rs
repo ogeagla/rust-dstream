@@ -176,6 +176,7 @@ impl TheWorld {
     ///  if every inside grid of G is a dense grid and
     ///  every outside grid is either a dense grid or a transitional
     ///  grid, then G is a grid cluster.
+    // TODO horrifying use of clone in this whole file...
     fn is_a_grid_cluster(t: u32, dgs: Vec<DG>) -> bool {
         for dg in dgs.clone().into_iter() {
             let label = dg.clone().get_grid_label_at_time(t);
@@ -301,6 +302,10 @@ impl TheWorld {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let idxs = TheWorld::compute_grid_indxs((dat.x, dat.y), props.i_range, props.j_range,props.i_bins, props.j_bins).unwrap();
         Ok((GridData{i:idxs.0,j:idxs.1,v:dat.v}))
+    }
+
+    fn get_neighbors(the_dg: DG, other_dgs: Vec<DG>) -> Vec<DG> {
+        other_dgs.clone().into_iter().filter( |dg| TheWorld::are_neighbors(&dg, &the_dg) ).collect()
     }
 }
 

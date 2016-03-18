@@ -69,6 +69,27 @@ fn test_is_a_grid_cluster() {
 }
 
 #[test]
+fn test_get_neighbors() {
+    let dg1 = DG {i: 0, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg2 = DG {i: 1, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg3 = DG {i: 0, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg4 = DG {i: 1, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg5 = DG {i: 1, j: 4,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg6 = DG {i: 1, j: 2,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+
+    let neighbors1 = TheWorld::get_neighbors(dg4.clone(), vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()));
+    let neighbors2 = TheWorld::get_neighbors(dg5.clone(), vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()));
+    assert_eq!(3, neighbors1.len());
+    assert_eq!(0, neighbors2.len());
+}
+
+#[test]
 fn test_is_inside_grid() {
     let dg1 = DG {i: 0, j: 0,
         updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
