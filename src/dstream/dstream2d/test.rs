@@ -69,8 +69,7 @@ fn test_is_a_grid_cluster() {
 }
 
 #[test]
-
-fn test_is_inside_grid_1() {
+fn test_is_inside_grid() {
     let dg1 = DG {i: 0, j: 0,
         updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
     let dg2 = DG {i: 1, j: 0,

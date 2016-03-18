@@ -173,9 +173,25 @@ impl TheWorld {
         //TODO
     }
 
-    fn is_a_grid_cluster(dg1: DG, other_dgs: Vec<DG>) -> bool {
-        //TODO
-        false
+    ///  if every inside grid of G is a dense grid and
+    ///  every outside grid is either a dense grid or a transitional
+    ///  grid, then G is a grid cluster.
+    fn is_a_grid_cluster(t: u32, dgs: Vec<DG>) -> bool {
+        for dg in dgs.clone().into_iter() {
+            let label = dg.clone().get_grid_label_at_time(t);
+            if TheWorld::is_inside_grid(dg.clone(), dgs.clone()) {
+                match label {
+                    GridLabel::Dense => (),
+                    _ => return false,
+                };
+            } else {
+                match label {
+                    GridLabel::Dense | GridLabel::Transitional => (),
+                    _ => return false,
+                };
+            }
+        }
+        true
     }
 
     fn is_inside_grid(dg1: DG, other_dgs: Vec<DG>) -> bool {
