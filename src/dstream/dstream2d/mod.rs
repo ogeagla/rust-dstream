@@ -93,22 +93,22 @@ impl Runner {
         world.init(default_vec);
 
         let mut has_initialized = false;
-        for t in 0..100 {
+        for t in 0..11 {
 
             let r_x = rand::random::<f64>();
             let r_y = rand::random::<f64>();
             let v = rand::random::<f64>();
 
-
             let rd_1 = RawData { x: r_x, y: r_y, v: v};
             println!("putting rand raw data: ({}, {}) -> {}", r_x, r_y, v);
             let res = world.put(t, vec!(rd_1));
 
-            if t % props.gap_time == 0 {
+            if (t + 1) % props.gap_time == 0 {
                 if has_initialized {
-                    let result = world.initialize_clustering(Vec::new());
+                    println!("-- adjusting clusters")
                 } else {
-
+                    println!("-- initializing clusters");
+                    let result = world.initialize_clustering();
                     has_initialized = true
                 }
             }
@@ -129,7 +129,7 @@ impl TheWorld {
         println!("");
     }
 
-    pub fn initialize_clustering(&self, grid_list: Vec<RawData>) -> Result<(), String> {
+    pub fn initialize_clustering(&mut self) -> Result<(), String> {
         //update density of all grids in grid_list
         //assign each dense grid to a distinct cluster
         //label all other grids as NO_CLASS; bad grids!
