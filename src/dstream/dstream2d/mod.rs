@@ -1,5 +1,5 @@
 use na::{Mat2, DMat};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::num::*;
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -7,6 +7,7 @@ use std::rc::Rc;
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::algo::*;
+use rand;
 
 mod test;
 
@@ -21,7 +22,10 @@ pub struct DG {
 
 #[derive(Debug)]
 #[derive(Clone)]
-pub enum GridLabel { Dense, Sparse, Transitional, }
+#[derive(PartialEq)]
+#[derive(Eq)]
+#[derive(Hash)]
+pub enum GridLabel { Dense, Sparse, Transitional, NoClass }
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -36,6 +40,7 @@ pub struct DStreamProps {
     j_bins: usize,
     i_range: (f64, f64),
     j_range: (f64, f64),
+    gap_time: u32,
 }
 
 #[derive(Clone)]
@@ -60,6 +65,8 @@ pub struct GridData {
 }
 pub struct TheWorld {
     g_vec: Vec<((usize, usize), DG)>,
+    timeline: Vec<u32>,
+    current_time: u32,
 }
 
 impl Default for DStreamProps {
@@ -69,10 +76,46 @@ impl Default for DStreamProps {
             c_l: 0.8,
             lambda: 0.998,
             beta: 0.3,
-            i_bins: 10 as usize,
-            j_bins: 10 as usize,
+            i_bins: 100 as usize,
+            j_bins: 100 as usize,
             i_range: (-10.0, 10.0),
             j_range: (-10.0, 10.0),
+            gap_time: 5,
+        }
+    }
+}
+
+pub struct Runner;
+
+impl Runner {
+    pub fn run_world() {
+        let props: DStreamProps = DStreamProps { ..Default::default() };
+
+        let default_vec : Vec<GridPoint> = Vec::new();
+        let mut world = TheWorld{g_vec: Vec::new(), timeline: Vec::new(), current_time: 0};
+        world.init(default_vec);
+
+        let mut has_initialized = false;
+        for t in 0..11 {
+
+            let r_x = rand::random::<f64>();
+            let r_y = rand::random::<f64>();
+            let v = rand::random::<f64>();
+
+            let rd_1 = RawData { x: r_x, y: r_y, v: v};
+            println!("putting rand raw data: ({}, {}) -> {}", r_x, r_y, v);
+            let res = world.put(t, vec!(rd_1));
+
+            if (t + 1) % props.gap_time == 0 {
+                if has_initialized {
+                    println!("-- adjusting clusters");
+                    let result = world.adjust_clustering();
+                } else {
+                    println!("-- initializing clusters");
+                    let result = world.initialize_clustering();
+                    has_initialized = true;
+                }
+            }
         }
     }
 }
@@ -88,6 +131,125 @@ impl TheWorld {
             println!(" ");
         }
         println!("");
+    }
+
+    fn is_outside_when_added_to(dg_to_check_if_outside: DG, dg_to_add: DG, dgs: Vec<DG>) -> bool {
+        let mut added_vec = dgs.clone();
+        added_vec.push(dg_to_add);
+        if TheWorld::is_inside_grid(dg_to_check_if_outside, added_vec) { false } else { true }
+    }
+
+    fn get_labels_for_time(t: u32, dgs: Vec<DG>) -> HashMap<(usize, usize), GridLabel> {
+        let mut the_map = HashMap::new();
+        dgs.into_iter().map(|dg| {
+            the_map.insert((dg.i, dg.j), dg.get_grid_label_at_time(t));
+        });
+        the_map
+    }
+
+    fn labels_changed_between(labels1: HashMap<(usize, usize), GridLabel>, labels2: HashMap<(usize, usize), GridLabel>) -> bool {
+        if labels1.len() != labels2.len() { return true }
+        for (idxs, label) in labels1 {
+            match labels2.get(&idxs) {
+                None => {
+                    return true
+                },
+                Some(l) => if label != *l {
+                    return true
+                },
+            }
+        }
+        false
+    }
+
+    fn which_labels_changed_between(labels1: HashMap<(usize, usize), GridLabel>, labels2: HashMap<(usize, usize), GridLabel>) -> Option<Vec<(usize, usize)>> {
+
+        let mut keys_set1 = HashSet::new();
+        for (k, v) in labels1.clone() {
+            keys_set1.insert(k);
+        }
+
+        let mut keys_set2 = HashSet::new();
+        for (k, v) in labels2.clone() {
+            keys_set2.insert(k);
+        }
+
+        let keys_intersection: HashSet<_> = keys_set1.intersection(&keys_set2).collect();
+        let keys_union: HashSet<_> = keys_set1.union(&keys_set2).collect();
+
+        if labels1.len() == labels2.len() && keys_intersection.len() == labels1.len() {
+            //keys are identical
+            let mut the_changed: Vec<(usize, usize)> = Vec::new();
+            for (k, v) in labels1.clone() {
+                let val2 = labels2.get(&k).unwrap();
+                if *val2 != v {
+                    the_changed.push(k);
+                }
+            }
+            if the_changed.len() != 0 { return Some(the_changed) }
+        } else {
+            let diff_keys: HashSet<_> = keys_union.symmetric_difference(&keys_intersection).collect();
+            let mut the_changed: Vec<(usize, usize)> = Vec::new();
+            for k in keys_intersection.clone().into_iter() {
+                let val1 = labels1.get(&k).unwrap();
+                let val2 = labels2.get(&k).unwrap();
+                if *val1 != *val2 {
+                    the_changed.push(*k);
+                }
+            }
+            for k in diff_keys {
+                the_changed.push(**k);
+            }
+            return Some(the_changed);
+        }
+
+        None
+    }
+
+    pub fn adjust_clustering(&mut self) -> Result<(), String> {
+        //update the density of all grids in grid_list
+        /*
+        foreach grid g whose attribute (dense/sparse/transitional) is changed since last call to adjust_clustering()
+            if g is a sparse grid
+                delete g from its cluster c, label g as NO_CLASS
+                if (c becomes unconnected) split c into two clusters
+            else if g is a dense grid
+                among all neighboring grids of g, find out the grid h whose cluster c_h has the largest size
+                if h is a dense grid
+                    if (g is labelled as NO_CLASS) label g as in c_h
+                    else if (g is in cluster c and |c| > |c_h|)
+                        label all grids in c_h as in c
+                    else if (g is in cluster c and |c| <= |c_h|)
+                        label all grids in c as in c_h
+                else if h is a transitional grid
+                    if ((g is NO_CLASS) and (h is an outside grid if g is added to c_h)) label g as in c_h
+                    else if (g is in cluster c and |c| >= |c_h|)
+                        move h from cluster c_h to c
+            else if (g is transitional grid)
+                among neighboring clusters of g, find the largest one c'
+                satisfying that g is an outside grid if added to it and
+                label g as in c'
+        */
+
+        Ok(())
+    }
+
+    pub fn initialize_clustering(&mut self) -> Result<(), String> {
+        //update density of all grids in grid_list
+        //assign each dense grid to a distinct cluster
+        //label all other grids as NO_CLASS; bad grids!
+        /*
+        do until no change in cluster labels
+              foreach cluster c
+                foreach outside grid g of c
+                    foreach neighboring grid h of g
+                        if h belongs to cluster c'
+                            if |c| > |c'| label all grids in c' as c
+                            else label all grids in c as c'
+                        else if (h is translational) label h as in c
+        end do
+        */
+        Ok(())
     }
 
     fn dmat_represents_fully_connected(dmat: DMat<f64>) -> bool {
@@ -281,6 +443,13 @@ impl TheWorld {
     }
     pub fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
 
+        self.current_time = t;
+        if ! self.timeline.contains(&t) {
+            self.timeline.push(t);
+        } else {
+            return Err(String::from("time has already been put"));
+        }
+
         fn validate_range(loc2d: (f64, f64)) -> bool {
             let props: DStreamProps = DStreamProps { ..Default::default() };
             if (loc2d.0 <= props.i_range.1) &&
@@ -324,7 +493,7 @@ impl TheWorld {
 
 impl DG {
 
-    fn is_sporadic (&self, t: u32) -> bool {
+    pub fn is_sporadic (&self, t: u32) -> bool {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let last_update_t_and_v = self.get_last_update_and_value_to(t);
         let d_t = self.get_at_time(t).1;
@@ -340,7 +509,7 @@ impl DG {
             _ => false
         }
     }
-    fn get_grid_label_at_time(&self, t:u32) -> GridLabel {
+    pub fn get_grid_label_at_time(&self, t:u32) -> GridLabel {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let n_size = (self.i * self.j) as f64;
         let d_m = props.c_m / (n_size * (1.0 - props.lambda));
@@ -355,23 +524,23 @@ impl DG {
             GridLabel::Transitional
         }
     }
-    fn get_at_time(&self, t: u32) -> (u32, f64) {
+    pub fn get_at_time(&self, t: u32) -> (u32, f64) {
         let last_update_time_and_value = self.get_last_update_and_value_to(t);
         let coeff = self.coeff(t, last_update_time_and_value.0);
         (last_update_time_and_value.0, coeff * last_update_time_and_value.1 + 1.0)
     }
-    fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
+    pub fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
         let sum = vals.clone().iter().fold(0.0, |sum, x| sum + x);
         self.updates_and_vals.push(GridPoint {t: t, v: sum});
         Ok(())
     }
-    fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
+    pub fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
         let a: GridPoint = self.updates_and_vals.clone().into_iter().filter(|bp| bp.t < t).max_by_key(|bp| bp.t).unwrap();
         let t_l = a.t;
         let v_l = a.v;
         (t_l, v_l)
     }
-    fn get_last_time_removed_as_sporadic_to(&self, t: u32) -> u32 {
+    pub fn get_last_time_removed_as_sporadic_to(&self, t: u32) -> u32 {
         let t = self.removed_as_spore_adic.clone().into_iter().filter(|&the_t| the_t < t).max().unwrap();
         t
     }
@@ -380,50 +549,3 @@ impl DG {
         props.lambda.powf((t_n - t_l) as f64)
     }
  }
-
-pub fn initialize_clustering(grid_list: Vec<RawData>) -> Result<(), String> {
-    //update density of all grids in grid_list
-    //assign each dense grid to a distinct cluster
-    //label all other grids as NO_CLASS; bad grids!
-    /*
-    do until no change in cluster labels
-          foreach cluster c
-            foreach outside grid g of c
-                foreach neighboring grid h of g
-                    if h belongs to cluster c'
-                        if |c| > |c'| label all grids in c' as c
-                        else label all grids in c as c'
-                    else if (h is translational) label h as in c
-    end do
-    */
-    Ok(())
-}
-
-
-pub fn adjust_clustering(grid_list: Vec<RawData>) -> Result<(), String> {
-    //update the density of all grids in grid_list
-    /*
-    foreach grid g whose attribute (dense/sparse/transitional) is changed since last call to adjust_clustering()
-        if g is a sparse grid
-            delete g from its cluster c, label g as NO_CLASS
-            if (c becomes unconnected) split c into two clusters
-        else if g is a dense grid
-            among all neighboring grids of g, find out the grid h whoe cluster c_h has the largest size
-            if h is a dense grid
-                if (g is labelled as NO_CLASS) label g as in c_h
-                else if (g is in cluster c and |c| > |c_h|)
-                    label all grids in c_h as in c
-                else if (g is in cluster c and |c| <= |c_h|)
-                    label all grids in c as in c_h
-            else if h is a transitional grid
-                if ((g is NO_CLASS) and (h is an outside grid if g is added to c_h)) label g as in c_h
-                else if (g is in cluster c and |c| >= |c_h|)
-                    move h from cluster c_h to c
-        else if (g is transitional grid)
-            among neighboring clusters of g, find the largest one c'
-            satisfying that g is an outside grid if added to it and
-            label g as in c'
-    */
-
-    Ok(())
-}
