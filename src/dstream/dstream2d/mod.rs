@@ -25,7 +25,7 @@ pub struct DG {
 #[derive(PartialEq)]
 #[derive(Eq)]
 #[derive(Hash)]
-pub enum GridLabel { Dense, Sparse, Transitional, }
+pub enum GridLabel { Dense, Sparse, Transitional, NoClass }
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -133,6 +133,12 @@ impl TheWorld {
         println!("");
     }
 
+    fn is_outside_when_added_to(dg_to_check_if_outside: DG, dg_to_add: DG, dgs: Vec<DG>) -> bool {
+        let mut added_vec = dgs.clone();
+        added_vec.push(dg_to_add);
+        if TheWorld::is_inside_grid(dg_to_check_if_outside, added_vec) { false } else { true }
+    }
+
     fn get_labels_for_time(t: u32, dgs: Vec<DG>) -> HashMap<(usize, usize), GridLabel> {
         let mut the_map = HashMap::new();
         dgs.into_iter().map(|dg| {
@@ -208,7 +214,7 @@ impl TheWorld {
                 delete g from its cluster c, label g as NO_CLASS
                 if (c becomes unconnected) split c into two clusters
             else if g is a dense grid
-                among all neighboring grids of g, find out the grid h whoe cluster c_h has the largest size
+                among all neighboring grids of g, find out the grid h whose cluster c_h has the largest size
                 if h is a dense grid
                     if (g is labelled as NO_CLASS) label g as in c_h
                     else if (g is in cluster c and |c| > |c_h|)

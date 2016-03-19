@@ -254,3 +254,32 @@ fn test_which_labels_changed_between() {
     assert_eq!(Some(vec!((1,1))), TheWorld::which_labels_changed_between(map1.clone(), map3.clone()));
     assert_eq!(Some(vec!((1,1))), TheWorld::which_labels_changed_between(map3.clone(), map1.clone()));
 }
+
+#[test]
+fn test_is_outside_when_added_to() {
+
+    let dg1 = DG {i: 0, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg2 = DG {i: 1, j: 0,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg3 = DG {i: 0, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg4 = DG {i: 1, j: 1,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg5 = DG {i: 1, j: 4,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let dg6 = DG {i: 1, j: 2,
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+
+    let result_1 = TheWorld::is_outside_when_added_to(
+        dg1.clone(),
+        dg2.clone(),
+        vec![dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()]);
+    let result_2 = TheWorld::is_outside_when_added_to(
+        dg6.clone(),
+        dg2.clone(),
+        vec![dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()]);
+
+    assert_eq!(false, result_1);
+    assert_eq!(true, result_2);
+}
