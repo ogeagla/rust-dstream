@@ -198,6 +198,7 @@ impl TheWorld {
                 }
             }
             for k in diff_keys {
+                //TODO this double deref makes me feel uneasy
                 the_changed.push(**k);
             }
             return Some(the_changed);
@@ -235,6 +236,36 @@ impl TheWorld {
     }
 
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
+        fn single_init_iteration(cs: Vec<Vec<((usize, usize), DG)>>) -> Vec<Vec<((usize, usize), DG)>> {
+
+            let mut v1: Vec<f64> = vec!(1.0);
+            let v2 = vec!(1.0);
+
+            let v3 = v1.extend(v2);
+
+            for c in cs {
+
+                for g in c.clone() {
+
+                    if TheWorld::is_inside_grid(g.1, c.clone().into_iter().map(|dg| dg.1).collect()) {
+
+                    } else {
+                        //outside grid
+
+
+                    }
+
+
+                }
+
+            }
+
+            Vec::new()
+        }
+
+        let mut clusters: Vec<Vec<((usize, usize), DG)>> = self.g_vec.clone().into_iter().map(|dg| vec!(dg)).collect();
+
+
         //update density of all grids in grid_list
         //assign each dense grid to a distinct cluster
         //label all other grids as NO_CLASS; bad grids!
