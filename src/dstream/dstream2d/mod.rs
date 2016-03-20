@@ -243,15 +243,21 @@ impl TheWorld {
 
             let v3 = v1.extend(v2);
 
-            for c in cs {
+            let all_g: Vec<((usize, usize), DG)> = cs.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
+
+            for c in cs.clone() {
 
                 for g in c.clone() {
 
-                    if TheWorld::is_inside_grid(g.1, c.clone().into_iter().map(|dg| dg.1).collect()) {
+                    if TheWorld::is_inside_grid(g.clone().1, c.clone().into_iter().map(|dg| dg.1).collect()) {
 
                     } else {
                         //outside grid
+                        for h in all_g.clone() {
+                            if TheWorld::are_neighbors(&(h.clone().1), &(g.clone().1)) {
 
+                            }
+                        }
 
                     }
 
