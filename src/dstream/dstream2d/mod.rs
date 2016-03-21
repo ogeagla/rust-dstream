@@ -255,6 +255,9 @@ impl TheWorld {
                         //outside grid
                         for h in all_g.clone() {
                             if TheWorld::are_neighbors(&(h.clone().1), &(g.clone().1)) {
+                                for c_prime in c.clone() {
+
+                                }
 
                             }
                         }
