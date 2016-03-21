@@ -256,19 +256,16 @@ impl TheWorld {
                         for h in all_g.clone() {
                             if TheWorld::are_neighbors(&(h.clone().1), &(g.clone().1)) {
                                 for c_prime in c.clone() {
-
+                                    if c_prime.len() > c.len() {
+                                        //move all grids in c_prime to c
+                                    }
                                 }
 
                             }
                         }
-
                     }
-
-
                 }
-
             }
-
             Vec::new()
         }
 
