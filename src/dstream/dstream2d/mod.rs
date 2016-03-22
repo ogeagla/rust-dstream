@@ -258,6 +258,8 @@ impl TheWorld {
                                 for c_prime in c.clone() {
                                     if c_prime.len() > c.len() {
                                         //move all grids in c_prime to c
+                                    } else {
+                                        //move all grids in c to c_prime
                                     }
                                 }
 
