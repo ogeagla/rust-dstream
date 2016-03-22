@@ -11,6 +11,15 @@ use rand;
 
 mod test;
 
+
+// TODO horrifying use of clone in this whole file...
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Cluster {
+    dgs: Vec<DG>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct DG {
     i: usize,
@@ -229,7 +238,7 @@ impl TheWorld {
 
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
         fn single_init_iteration(cs: Vec<Vec<((usize, usize), DG)>>, t: u32) -> Vec<Vec<((usize, usize), DG)>> {
-            
+
             let all_g: Vec<((usize, usize), DG)> = cs.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
 
             for c in cs.clone() {
@@ -269,6 +278,13 @@ impl TheWorld {
 
         let mut clusters: Vec<Vec<((usize, usize), DG)>> = self.g_vec.clone().into_iter().map(|dg| vec!(dg)).collect();
 
+        let all_g: Vec<((usize, usize), DG)> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
+
+        let mut init_labels = TheWorld::get_labels_for_time(self.current_time, all_g.into_iter().map(|dg| dg.1).collect());
+
+        while TheWorld::labels_changed_between(init_labels.clone(), init_labels.clone()) {
+
+        }
 
         //update density of all grids in grid_list
         //assign each dense grid to a distinct cluster
@@ -386,7 +402,6 @@ impl TheWorld {
     ///  if every inside grid of G is a dense grid and
     ///  every outside grid is either a dense grid or a transitional
     ///  grid, then G is a grid cluster.
-    // TODO horrifying use of clone in this whole file...
     fn is_a_grid_cluster(t: u32, dgs: Vec<DG>) -> bool {
         for dg in dgs.clone().into_iter() {
             let label = dg.clone().get_grid_label_at_time(t);
