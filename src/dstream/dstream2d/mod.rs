@@ -209,6 +209,43 @@ impl TheWorld {
     }
 
     pub fn adjust_clustering(&mut self) -> Result<(), String> {
+
+        fn dgs_with_changed_labels_since_last_time() -> Vec<DG> {
+            Vec::new()
+        }
+
+        fn is_no_longer_fully_connected(c: Cluster) -> bool {
+            true
+        }
+
+        fn get_neighboring_dg_with_largest_cluster(ref_dg: DG) -> DG {
+            DG {i: 1, j: 1, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),}
+        }
+
+        for g in dgs_with_changed_labels_since_last_time() {
+            match g.get_grid_label_at_time(self.current_time) {
+                GridLabel::Sparse => {
+                    //remove g from its cluster
+                    //label g as NoClass
+                    let c = Cluster { dgs: Vec::new(), };
+
+                    if is_no_longer_fully_connected(c) {
+                        //split c into 2 clusters
+                    }
+                },
+                GridLabel::Dense => {
+                    let h = get_neighboring_dg_with_largest_cluster(g.clone());
+                    match h.get_grid_label_at_time(self.current_time) {
+                        GridLabel::Dense => {
+                            
+                        },
+                        _ => (),
+                    }
+                },
+                _ => (),
+            }
+        }
+
         //update the density of all grids in grid_list
         /*
         foreach grid g whose attribute (dense/sparse/transitional) is changed since last call to adjust_clustering()
