@@ -11,8 +11,7 @@ use rand;
 
 mod test;
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DG {
     i: usize,
     j: usize,
@@ -20,15 +19,10 @@ pub struct DG {
     removed_as_spore_adic: Vec<u32>,
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(PartialEq)]
-#[derive(Eq)]
-#[derive(Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum GridLabel { Dense, Sparse, Transitional, NoClass }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum GridStatus { Sporadic, Normal, }
 
 pub struct DStreamProps {
@@ -50,9 +44,7 @@ pub struct RawData {
     v: f64,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GridPoint {
     t: u32,
     v: f64,
@@ -236,7 +228,7 @@ impl TheWorld {
     }
 
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
-        fn single_init_iteration(cs: Vec<Vec<((usize, usize), DG)>>) -> Vec<Vec<((usize, usize), DG)>> {
+        fn single_init_iteration(cs: Vec<Vec<((usize, usize), DG)>>, t: u32) -> Vec<Vec<((usize, usize), DG)>> {
 
             let mut v1: Vec<f64> = vec!(1.0);
             let v2 = vec!(1.0);
@@ -250,19 +242,28 @@ impl TheWorld {
                 for g in c.clone() {
 
                     if TheWorld::is_inside_grid(g.clone().1, c.clone().into_iter().map(|dg| dg.1).collect()) {
-
+                        //not outside grid
                     } else {
                         //outside grid
                         for h in all_g.clone() {
                             if TheWorld::are_neighbors(&(h.clone().1), &(g.clone().1)) {
-                                for c_prime in c.clone() {
-                                    if c_prime.len() > c.len() {
-                                        //move all grids in c_prime to c
-                                    } else {
-                                        //move all grids in c to c_prime
+                                //for every neighboring grid h
+                                for c_prime in cs.clone() {
+                                    if c_prime.contains(&h) {
+                                        //where h belongs to cluster c_prime
+                                        if c_prime.len() > c.len() {
+                                            //move all grids in c_prime to c
+                                        } else {
+                                            //move all grids in c to c_prime
+                                        }
                                     }
                                 }
-
+                                match h.1.get_grid_label_at_time(t) {
+                                    GridLabel::Transitional => {
+                                        //move h into c
+                                    },
+                                    _ => (),
+                                }
                             }
                         }
                     }
