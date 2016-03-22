@@ -229,12 +229,7 @@ impl TheWorld {
 
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
         fn single_init_iteration(cs: Vec<Vec<((usize, usize), DG)>>, t: u32) -> Vec<Vec<((usize, usize), DG)>> {
-
-            let mut v1: Vec<f64> = vec!(1.0);
-            let v2 = vec!(1.0);
-
-            let v3 = v1.extend(v2);
-
+            
             let all_g: Vec<((usize, usize), DG)> = cs.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
 
             for c in cs.clone() {
