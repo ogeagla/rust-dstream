@@ -14,6 +14,9 @@ mod test;
 
 // TODO horrifying use of clone in this whole file...
 
+// TODO learnings from work on the impl of init clusters:
+// - NO_CLASS refers to a grid no being in a cluster. so the grid's 'cluster key' is 'NO_CLASS'
+// - grids need to know their status, label, and which cluster they belong to at a time. period!
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cluster {
@@ -243,7 +246,7 @@ impl TheWorld {
 
                         },
                         GridLabel::Transitional => {
-                            
+
                         },
                         _ => (),
                     }
