@@ -18,20 +18,21 @@ mod test;
 // - grids need to know their status, label, and which cluster they belong to at a time. period!
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Cluster {
-    dgs: Vec<DG>,
+pub struct Cluster<'a> {
+    dgs: Vec<DG<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DG {
+pub struct DG<'a> {
     i: usize,
     j: usize,
     updates_and_vals: Vec<GridPoint>,
     removed_as_spore_adic: Vec<u32>,
+    cluster: Option<&'a Cluster<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum GridLabel { Dense, Sparse, Transitional, NoClass }
+pub enum GridLabel { Dense, Sparse, Transitional, }
 
 #[derive(Debug, Clone)]
 pub enum GridStatus { Sporadic, Normal, }
@@ -66,8 +67,8 @@ pub struct GridData {
     j: usize,
     v: f64,
 }
-pub struct TheWorld {
-    g_vec: Vec<DG>,
+pub struct TheWorld<'a> {
+    g_vec: Vec<DG<'a>>,
     timeline: Vec<u32>,
     current_time: u32,
 }
@@ -123,7 +124,7 @@ impl Runner {
     }
 }
 
-impl TheWorld {
+impl<'a> TheWorld<'a> {
 
     fn pretty_print_dmat(dmat: DMat<f64>) {
         for r in 0..dmat.nrows() {
@@ -212,7 +213,7 @@ impl TheWorld {
 
     pub fn adjust_clustering(&mut self) -> Result<(), String> {
 
-        fn dgs_with_changed_labels_since_last_time() -> Vec<DG> {
+        fn dgs_with_changed_labels_since_last_time<'b>() -> Vec<DG<'b>> {
             //TODO
             Vec::new()
         }
@@ -224,7 +225,7 @@ impl TheWorld {
 
         fn get_neighboring_dg_with_largest_cluster(ref_dg: DG) -> DG {
             //TODO
-            DG {i: 1, j: 1, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),}
+            DG {i: 1, j: 1, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, }
         }
 
         for g in dgs_with_changed_labels_since_last_time() {
@@ -519,7 +520,7 @@ impl TheWorld {
             for j in 0..props.j_bins {
                 let z_clone = def_bucket.clone();
                 let some_default_dg = DG {i: i, j: j,
-                    updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(),};
+                    updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(), cluster: None, };
                 (self.g_vec).push(some_default_dg);
             }
         }
@@ -527,11 +528,11 @@ impl TheWorld {
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
 
-    fn get_by_idx(&mut self, idx: (usize, usize))-> DG {
+    fn get_by_idx(&mut self, idx: (usize, usize))-> DG<'a> {
         let  vec_f: Vec<DG> = self.g_vec.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
         vec_f[0].clone()
     }
-    fn update_by_idx(&mut self, idx: (usize, usize), dg: DG) -> Result<(), String> {
+    fn update_by_idx(&mut self, idx: (usize, usize), dg: DG<'a>) -> Result<(), String> {
         self.g_vec.retain(|i| (i.i, i.j) != idx);
         self.g_vec.push(dg);
         Ok(())
@@ -568,7 +569,7 @@ impl TheWorld {
 
         for (key, group) in with_idxs.iter().group_by(|gd| (gd.i, gd.j)) {
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
-            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(),};
+            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
             let teh_dg: &mut DG = &mut self.get_by_idx(key);
             let update_dg_result = teh_dg.update(t, the_vec_of_vals);
             let udpate_world_result = self.update_by_idx(key, teh_dg.clone());
@@ -581,12 +582,12 @@ impl TheWorld {
         Ok((GridData{i:idxs.0,j:idxs.1,v:dat.v}))
     }
 
-    fn get_neighbors(the_dg: DG, other_dgs: Vec<DG>) -> Vec<DG> {
+    fn get_neighbors(the_dg: DG<'a>, other_dgs: Vec<DG<'a>>) -> Vec<DG<'a>> {
         other_dgs.clone().into_iter().filter( |dg| TheWorld::are_neighbors(&dg, &the_dg) ).collect()
     }
 }
 
-impl DG {
+impl<'a> DG<'a> {
 
     pub fn is_sporadic (&self, t: u32) -> bool {
         let props: DStreamProps = DStreamProps { ..Default::default() };

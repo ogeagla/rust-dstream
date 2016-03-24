@@ -68,17 +68,17 @@ fn test_is_a_grid_cluster() {
 #[test]
 fn test_get_neighbors() {
     let dg1 = DG {i: 0, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg2 = DG {i: 1, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg3 = DG {i: 0, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg4 = DG {i: 1, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg5 = DG {i: 1, j: 4,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg6 = DG {i: 1, j: 2,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
 
     let neighbors1 = TheWorld::get_neighbors(dg4.clone(), vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()));
     let neighbors2 = TheWorld::get_neighbors(dg5.clone(), vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()));
@@ -89,17 +89,17 @@ fn test_get_neighbors() {
 #[test]
 fn test_is_inside_grid() {
     let dg1 = DG {i: 0, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg2 = DG {i: 1, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg3 = DG {i: 0, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg4 = DG {i: 1, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg5 = DG {i: 1, j: 4,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg6 = DG {i: 1, j: 2,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
 
     let result_1 = TheWorld::is_inside_grid(dg1.clone(), vec![dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()]);
     let result_2 = TheWorld::is_inside_grid(dg6.clone(), vec![dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg5.clone(), dg6.clone()]);
@@ -111,17 +111,17 @@ fn test_is_inside_grid() {
 #[test]
 fn test_is_a_grid_group() {
     let dg1 = DG {i: 0, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg2 = DG {i: 1, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg3 = DG {i: 0, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg4 = DG {i: 1, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg5 = DG {i: 1, j: 4,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg6 = DG {i: 1, j: 2,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
 
     let result = TheWorld::is_a_grid_group(vec!(dg1.clone(), dg2.clone(), dg3.clone(), dg4.clone(), dg6.clone()));
     assert_eq!(true, result);
@@ -149,11 +149,11 @@ fn test_compute_grid_indxs() {
 #[test]
 fn test_are_neighbors() {
     let dg1 = &DG {i: 0, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg2 = &DG {i: 1, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg3 = &DG {i: 1, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
 
     assert_eq!(true, TheWorld::are_neighbors(dg1, dg2));
     assert_eq!(true, TheWorld::are_neighbors(dg2, dg3));
@@ -162,7 +162,7 @@ fn test_are_neighbors() {
 
 #[test]
 fn test_dg_update_and_get() {
-    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     dg.update(1, vec!(100.0));
 
     dg.update(10, vec!(200.0));
@@ -178,7 +178,7 @@ fn test_dg_update_and_get() {
 
 #[test]
 fn test_removed_as_sporadic() {
-    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: vec!(1, 2, 3, 4),};
+    let mut dg = DG {i: 0, j:0, updates_and_vals: Vec::new(), removed_as_spore_adic: vec!(1, 2, 3, 4), cluster: None, };
     assert_eq!(1, dg.get_last_time_removed_as_sporadic_to(2));
     assert_eq!(4, dg.get_last_time_removed_as_sporadic_to(6));
 }
@@ -259,17 +259,17 @@ fn test_which_labels_changed_between() {
 fn test_is_outside_when_added_to() {
 
     let dg1 = DG {i: 0, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg2 = DG {i: 1, j: 0,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg3 = DG {i: 0, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg4 = DG {i: 1, j: 1,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg5 = DG {i: 1, j: 4,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
     let dg6 = DG {i: 1, j: 2,
-        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(),};
+        updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
 
     let result_1 = TheWorld::is_outside_when_added_to(
         dg1.clone(),
