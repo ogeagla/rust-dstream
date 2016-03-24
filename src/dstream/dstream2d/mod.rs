@@ -11,7 +11,6 @@ use rand;
 
 mod test;
 
-
 // TODO horrifying use of clone in this whole file...
 
 // TODO learnings from work on the impl of init clusters:
@@ -68,7 +67,7 @@ pub struct GridData {
     v: f64,
 }
 pub struct TheWorld {
-    g_vec: Vec<((usize, usize), DG)>,
+    g_vec: Vec<DG>,
     timeline: Vec<u32>,
     current_time: u32,
 }
@@ -322,11 +321,11 @@ impl TheWorld {
             Vec::new()
         }
 
-        let mut clusters: Vec<Vec<((usize, usize), DG)>> = self.g_vec.clone().into_iter().map(|dg| vec!(dg)).collect();
+        let mut clusters: Vec<Vec<DG>> = self.g_vec.clone().into_iter().map(|dg| vec!(dg)).collect();
 
-        let all_g: Vec<((usize, usize), DG)> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
+        let all_g: Vec<DG> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
 
-        let mut init_labels = TheWorld::get_labels_for_time(self.current_time, all_g.into_iter().map(|dg| dg.1).collect());
+        let mut init_labels = TheWorld::get_labels_for_time(self.current_time, all_g);
 
         while TheWorld::labels_changed_between(init_labels.clone(), init_labels.clone()) {
 
@@ -521,7 +520,7 @@ impl TheWorld {
                 let z_clone = def_bucket.clone();
                 let some_default_dg = DG {i: i, j: j,
                     updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(),};
-                (self.g_vec).push(((i as usize, j as usize), some_default_dg));
+                (self.g_vec).push(some_default_dg);
             }
         }
     }
@@ -529,12 +528,12 @@ impl TheWorld {
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
 
     fn get_by_idx(&mut self, idx: (usize, usize))-> DG {
-        let  vec_f: Vec<((usize, usize), DG)> = self.g_vec.clone().into_iter().filter(|i| i.0 == idx).collect();
-        vec_f[0].1.clone()
+        let  vec_f: Vec<DG> = self.g_vec.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
+        vec_f[0].clone()
     }
     fn update_by_idx(&mut self, idx: (usize, usize), dg: DG) -> Result<(), String> {
-        self.g_vec.retain(|i| i.0 != idx);
-        self.g_vec.push((idx, dg));
+        self.g_vec.retain(|i| (i.i, i.j) != idx);
+        self.g_vec.push(dg);
         Ok(())
     }
     pub fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
