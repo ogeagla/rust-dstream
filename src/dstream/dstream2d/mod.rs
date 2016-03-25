@@ -19,22 +19,26 @@ mod test;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cluster<'a> {
-    dgs: Vec<DG<'a>>,
+
+    //TODO FIXME a Vec of refs doesnt seem right?
+    dgs: Vec<&'a GridCell<'a>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DG<'a> {
+pub struct GridCell<'a> {
     i: usize,
     j: usize,
     updates_and_vals: Vec<GridPoint>,
     removed_as_spore_adic: Vec<u32>,
     cluster: Option<&'a Cluster<'a>>,
+    label: GridLabel,
+    status: GridStatus,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum GridLabel { Dense, Sparse, Transitional, }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum GridStatus { Sporadic, Normal, }
 
 pub struct DStreamProps {
@@ -68,7 +72,7 @@ pub struct GridData {
     v: f64,
 }
 pub struct TheWorld<'a> {
-    g_vec: Vec<DG<'a>>,
+    g_vec: Vec<GridCell<'a>>,
     timeline: Vec<u32>,
     current_time: u32,
 }
@@ -137,13 +141,13 @@ impl<'a> TheWorld<'a> {
         println!("");
     }
 
-    fn is_outside_when_added_to(dg_to_check_if_outside: DG, dg_to_add: DG, dgs: Vec<DG>) -> bool {
+    fn is_outside_when_added_to(dg_to_check_if_outside: GridCell, dg_to_add: GridCell, dgs: Vec<GridCell>) -> bool {
         let mut added_vec = dgs.clone();
         added_vec.push(dg_to_add);
         if TheWorld::is_inside_grid(dg_to_check_if_outside, added_vec) { false } else { true }
     }
 
-    fn get_labels_for_time(t: u32, dgs: Vec<DG>) -> HashMap<(usize, usize), GridLabel> {
+    fn get_labels_for_time(t: u32, dgs: Vec<GridCell>) -> HashMap<(usize, usize), GridLabel> {
         let mut the_map = HashMap::new();
         dgs.into_iter().map(|dg| {
             the_map.insert((dg.i, dg.j), dg.get_grid_label_at_time(t));
@@ -213,7 +217,7 @@ impl<'a> TheWorld<'a> {
 
     pub fn adjust_clustering(&mut self) -> Result<(), String> {
 
-        fn dgs_with_changed_labels_since_last_time<'b>() -> Vec<DG<'b>> {
+        fn dgs_with_changed_labels_since_last_time<'b>() -> Vec<GridCell<'b>> {
             //TODO
             Vec::new()
         }
@@ -223,9 +227,9 @@ impl<'a> TheWorld<'a> {
             true
         }
 
-        fn get_neighboring_dg_with_largest_cluster(ref_dg: DG) -> DG {
+        fn get_neighboring_dg_with_largest_cluster(ref_dg: GridCell) -> GridCell {
             //TODO
-            DG {i: 1, j: 1, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, }
+            GridCell {i: 1, j: 1, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal}
         }
 
         for g in dgs_with_changed_labels_since_last_time() {
@@ -283,9 +287,9 @@ impl<'a> TheWorld<'a> {
     }
 
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
-        fn single_init_iteration(cs: Vec<Vec<((usize, usize), DG)>>, t: u32) -> Vec<Vec<((usize, usize), DG)>> {
+        fn single_init_iteration(cs: Vec<Vec<((usize, usize), GridCell)>>, t: u32) -> Vec<Vec<((usize, usize), GridCell)>> {
 
-            let all_g: Vec<((usize, usize), DG)> = cs.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
+            let all_g: Vec<((usize, usize), GridCell)> = cs.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
 
             for c in cs.clone() {
 
@@ -322,9 +326,9 @@ impl<'a> TheWorld<'a> {
             Vec::new()
         }
 
-        let mut clusters: Vec<Vec<DG>> = self.g_vec.clone().into_iter().map(|dg| vec!(dg)).collect();
+        let mut clusters: Vec<Vec<GridCell>> = self.g_vec.clone().into_iter().map(|dg| vec!(dg)).collect();
 
-        let all_g: Vec<DG> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
+        let all_g: Vec<GridCell> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
 
         let mut init_labels = TheWorld::get_labels_for_time(self.current_time, all_g);
 
@@ -416,10 +420,10 @@ impl<'a> TheWorld<'a> {
         TheWorld::dmat_represents_fully_connected(dmat_powered)
     }
 
-    fn dgs_to_graph(dgs: Vec<DG>) ->  Graph<(usize, usize), (usize, usize)> {
+    fn dgs_to_graph(dgs: Vec<GridCell>) ->  Graph<(usize, usize), (usize, usize)> {
         let mut neighbors_graph = Graph::<(usize, usize), (usize, usize)>::new();
 
-        let dgs_and_nidxs: Vec<(DG, NodeIndex)> = dgs.clone().into_iter().map(|dg| (dg.clone(), neighbors_graph.add_node((dg.i, dg.j)))).collect();
+        let dgs_and_nidxs: Vec<(GridCell, NodeIndex)> = dgs.clone().into_iter().map(|dg| (dg.clone(), neighbors_graph.add_node((dg.i, dg.j)))).collect();
 
         for two_dgs_and_nidxs in dgs_and_nidxs.clone().into_iter().combinations_n(2) {
 
@@ -440,7 +444,7 @@ impl<'a> TheWorld<'a> {
         neighbors_graph.clone()
     }
 
-    fn mark_and_remove_and_reset_spore_adics(t: u32, dgs: Vec<DG>) {
+    fn mark_and_remove_and_reset_spore_adics(t: u32, dgs: Vec<GridCell>) {
         //prop 4.3: mark as sporadic; grids marked sporadic last t can be removed this t, or labeled as normal
         //TODO
     }
@@ -448,7 +452,7 @@ impl<'a> TheWorld<'a> {
     ///  if every inside grid of G is a dense grid and
     ///  every outside grid is either a dense grid or a transitional
     ///  grid, then G is a grid cluster.
-    fn is_a_grid_cluster(t: u32, dgs: Vec<DG>) -> bool {
+    fn is_a_grid_cluster(t: u32, dgs: Vec<GridCell>) -> bool {
         for dg in dgs.clone().into_iter() {
             let label = dg.clone().get_grid_label_at_time(t);
             if TheWorld::is_inside_grid(dg.clone(), dgs.clone()) {
@@ -466,7 +470,7 @@ impl<'a> TheWorld<'a> {
         true
     }
 
-    fn is_inside_grid(dg1: DG, other_dgs: Vec<DG>) -> bool {
+    fn is_inside_grid(dg1: GridCell, other_dgs: Vec<GridCell>) -> bool {
         let dgs_wo_1 = other_dgs.into_iter().filter(|dg| !(dg.i == dg1.i && dg.j == dg1.j));
         let mut has_neighbor_i = false;
         let mut has_neighbor_j = false;
@@ -481,7 +485,7 @@ impl<'a> TheWorld<'a> {
         }
     }
 
-    fn is_a_grid_group(dgs: Vec<DG>) -> bool {
+    fn is_a_grid_group(dgs: Vec<GridCell>) -> bool {
         let neighbors_graph = TheWorld::dgs_to_graph(dgs.clone());
         let edge_count = neighbors_graph.edge_count();
         let node_count = neighbors_graph.node_count();
@@ -489,15 +493,15 @@ impl<'a> TheWorld<'a> {
         TheWorld::graph_is_fully_connected(neighbors_graph)
     }
 
-    fn are_neighbors(dg1: &DG, dg2: &DG) -> bool {
+    fn are_neighbors(dg1: &GridCell, dg2: &GridCell) -> bool {
         TheWorld::are_neighbors_in_i(dg1, dg2) || TheWorld::are_neighbors_in_j(dg1, dg2)
     }
 
-    fn are_neighbors_in_i(dg1: &DG, dg2: &DG) -> bool {
+    fn are_neighbors_in_i(dg1: &GridCell, dg2: &GridCell) -> bool {
         (dg1.i == dg2.i) && (dg1.j as i32 - dg2.j as i32).abs() == 1
     }
 
-    fn are_neighbors_in_j(dg1: &DG, dg2: &DG) -> bool {
+    fn are_neighbors_in_j(dg1: &GridCell, dg2: &GridCell) -> bool {
         (dg1.j == dg2.j) && (dg1.i as i32 - dg2.i as i32).abs() == 1
     }
 
@@ -519,8 +523,8 @@ impl<'a> TheWorld<'a> {
         for i in 0..props.i_bins {
             for j in 0..props.j_bins {
                 let z_clone = def_bucket.clone();
-                let some_default_dg = DG {i: i, j: j,
-                    updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(), cluster: None, };
+                let some_default_dg = GridCell {i: i, j: j,
+                    updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal};
                 (self.g_vec).push(some_default_dg);
             }
         }
@@ -528,11 +532,11 @@ impl<'a> TheWorld<'a> {
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
 
-    fn get_by_idx(&mut self, idx: (usize, usize))-> DG<'a> {
-        let  vec_f: Vec<DG> = self.g_vec.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
+    fn get_by_idx(&mut self, idx: (usize, usize))-> GridCell<'a> {
+        let  vec_f: Vec<GridCell> = self.g_vec.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
         vec_f[0].clone()
     }
-    fn update_by_idx(&mut self, idx: (usize, usize), dg: DG<'a>) -> Result<(), String> {
+    fn update_by_idx(&mut self, idx: (usize, usize), dg: GridCell<'a>) -> Result<(), String> {
         self.g_vec.retain(|i| (i.i, i.j) != idx);
         self.g_vec.push(dg);
         Ok(())
@@ -569,8 +573,8 @@ impl<'a> TheWorld<'a> {
 
         for (key, group) in with_idxs.iter().group_by(|gd| (gd.i, gd.j)) {
             let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
-            let mut some_default_dg = DG {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(), cluster: None, };
-            let teh_dg: &mut DG = &mut self.get_by_idx(key);
+            let mut some_default_dg = GridCell {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal};
+            let teh_dg: &mut GridCell = &mut self.get_by_idx(key);
             let update_dg_result = teh_dg.update(t, the_vec_of_vals);
             let udpate_world_result = self.update_by_idx(key, teh_dg.clone());
         }
@@ -582,12 +586,12 @@ impl<'a> TheWorld<'a> {
         Ok((GridData{i:idxs.0,j:idxs.1,v:dat.v}))
     }
 
-    fn get_neighbors(the_dg: DG<'a>, other_dgs: Vec<DG<'a>>) -> Vec<DG<'a>> {
+    fn get_neighbors(the_dg: GridCell<'a>, other_dgs: Vec<GridCell<'a>>) -> Vec<GridCell<'a>> {
         other_dgs.clone().into_iter().filter( |dg| TheWorld::are_neighbors(&dg, &the_dg) ).collect()
     }
 }
 
-impl<'a> DG<'a> {
+impl<'a> GridCell<'a> {
 
     pub fn is_sporadic (&self, t: u32) -> bool {
         let props: DStreamProps = DStreamProps { ..Default::default() };
