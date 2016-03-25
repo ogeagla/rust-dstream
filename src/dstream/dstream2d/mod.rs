@@ -72,7 +72,8 @@ pub struct GridData {
     v: f64,
 }
 pub struct TheWorld<'a> {
-    g_vec: Vec<GridCell<'a>>,
+    clusters: Vec<Cluster<'a>>,
+    grid_cells: Vec<GridCell<'a>>,
     timeline: Vec<u32>,
     current_time: u32,
 }
@@ -100,7 +101,7 @@ impl Runner {
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
         let default_vec : Vec<GridPoint> = Vec::new();
-        let mut world = TheWorld{g_vec: Vec::new(), timeline: Vec::new(), current_time: 0};
+        let mut world = TheWorld{grid_cells: Vec::new(), timeline: Vec::new(), current_time: 0, clusters: Vec::new(),};
         world.init(default_vec);
 
         let mut has_initialized = false;
@@ -326,7 +327,7 @@ impl<'a> TheWorld<'a> {
             Vec::new()
         }
 
-        let mut clusters: Vec<Vec<GridCell>> = self.g_vec.clone().into_iter().map(|dg| vec!(dg)).collect();
+        let mut clusters: Vec<Vec<GridCell>> = self.grid_cells.clone().into_iter().map(|dg| vec!(dg)).collect();
 
         let all_g: Vec<GridCell> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
 
@@ -525,7 +526,7 @@ impl<'a> TheWorld<'a> {
                 let z_clone = def_bucket.clone();
                 let some_default_dg = GridCell {i: i, j: j,
                     updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal};
-                (self.g_vec).push(some_default_dg);
+                (self.grid_cells).push(some_default_dg);
             }
         }
     }
@@ -533,12 +534,12 @@ impl<'a> TheWorld<'a> {
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
 
     fn get_by_idx(&mut self, idx: (usize, usize))-> GridCell<'a> {
-        let  vec_f: Vec<GridCell> = self.g_vec.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
+        let  vec_f: Vec<GridCell> = self.grid_cells.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
         vec_f[0].clone()
     }
     fn update_by_idx(&mut self, idx: (usize, usize), dg: GridCell<'a>) -> Result<(), String> {
-        self.g_vec.retain(|i| (i.i, i.j) != idx);
-        self.g_vec.push(dg);
+        self.grid_cells.retain(|i| (i.i, i.j) != idx);
+        self.grid_cells.push(dg);
         Ok(())
     }
     pub fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {

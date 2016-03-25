@@ -61,7 +61,7 @@ fn test_mark_and_remove_and_reset_spore_adics() {
 #[test]
 #[ignore]
 fn test_is_a_grid_cluster() {
-    //TODO, this is hard
+    //TODO
     assert!(false);
 }
 
@@ -195,7 +195,7 @@ fn test_put_time_updates_work() {
     let t = 1;
 
     let default_vec : Vec<GridPoint> = Vec::new();
-    let mut world = TheWorld{g_vec: Vec::new(), timeline: Vec::new(), current_time: 0};
+    let mut world = TheWorld{grid_cells: Vec::new(), timeline: Vec::new(), current_time: 0, clusters: Vec::new(),};
     world.init(default_vec);
     let res1 = world.put(t, rd_vec.clone());
     assert_eq!(t, world.current_time);
