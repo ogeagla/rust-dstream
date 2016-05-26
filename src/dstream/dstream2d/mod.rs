@@ -74,6 +74,7 @@ pub struct GridData {
 pub struct TheWorld<'a> {
     clusters: Vec<Cluster<'a>>,
     grid_cells: Vec<GridCell<'a>>,
+    previous_grid_cells: Vec<GridCell<'a>>,
     timeline: Vec<u32>,
     current_time: u32,
 }
@@ -101,7 +102,8 @@ impl Runner {
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
         let default_vec : Vec<GridPoint> = Vec::new();
-        let mut world = TheWorld{grid_cells: Vec::new(), timeline: Vec::new(), current_time: 0, clusters: Vec::new(),};
+        let mut world = TheWorld{grid_cells: Vec::new(), timeline: Vec::new(), 
+            current_time: 0, clusters: Vec::new(), previous_grid_cells: Vec::new(), };
         world.init(default_vec);
 
         let mut has_initialized = false;
