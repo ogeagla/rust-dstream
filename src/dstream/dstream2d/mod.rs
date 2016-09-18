@@ -220,6 +220,15 @@ impl<'a> TheWorld<'a> {
 
     pub fn adjust_clustering(&mut self) -> Result<(), String> {
 
+        /*
+        pub struct TheWorld<'a> {
+            clusters: Vec<Cluster<'a>>,
+            grid_cells: Vec<GridCell<'a>>,
+            timeline: Vec<u32>,
+            current_time: u32,
+        }
+        */
+
         fn dgs_with_changed_labels_since_last_time<'b>() -> Vec<GridCell<'b>> {
             //TODO
             Vec::new()
@@ -227,7 +236,17 @@ impl<'a> TheWorld<'a> {
 
         fn is_no_longer_fully_connected(c: Cluster) -> bool {
             //TODO
-            true
+            //FIXME this code looks horrific...
+            let neighbors_graph = TheWorld::dgs_to_graph(
+                c
+                    .dgs
+                    .clone()
+                    .iter()
+                    .map(|p|
+                        (*p).clone())
+                    .collect()
+            );
+            TheWorld::graph_is_fully_connected(neighbors_graph)
         }
 
         fn get_neighboring_dg_with_largest_cluster(ref_dg: GridCell) -> GridCell {
@@ -238,6 +257,7 @@ impl<'a> TheWorld<'a> {
         for g in dgs_with_changed_labels_since_last_time() {
             match g.get_grid_label_at_time(self.current_time) {
                 GridLabel::Sparse => {
+                    //TODO
                     //remove g from its cluster
                     //label g as NoClass
                     let c = Cluster { dgs: Vec::new(), };
