@@ -8,7 +8,7 @@ use petgraph::algo::*;
 use petgraph::visit::*;
 use std::collections::HashMap;
 
-fn pretty_print_dmat(dmat: DMat<f64>) {
+fn pretty_print_dmat(dmat: DMatrix<f64>) {
     for r in 0..dmat.nrows() {
         for c in 0..dmat.ncols() {
             let elem = dmat[(r, c)];

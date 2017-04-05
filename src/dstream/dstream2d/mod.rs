@@ -1,4 +1,4 @@
-use na::{Mat2, DMat};
+use na::{DMatrix};
 use std::collections::{HashMap, HashSet};
 use std::num::*;
 use itertools::Itertools;
@@ -133,7 +133,7 @@ impl Runner {
 
 impl<'a> TheWorld<'a> {
 
-    fn pretty_print_dmat(dmat: DMat<f64>) {
+    fn pretty_print_dmat(dmat: DMatrix<f64>) {
         for r in 0..dmat.nrows() {
             for c in 0..dmat.ncols() {
                 let elem = dmat[(r, c)];
@@ -376,7 +376,7 @@ impl<'a> TheWorld<'a> {
         Ok(())
     }
 
-    fn dmat_represents_fully_connected(dmat: DMat<f64>) -> bool {
+    fn dmat_represents_fully_connected(dmat: DMatrix<f64>) -> bool {
         for r in 0..dmat.nrows() {
             for c in 0..dmat.ncols() {
                 let elem = dmat[(r, c)];
@@ -388,8 +388,8 @@ impl<'a> TheWorld<'a> {
         true
     }
 
-    fn convert_graph_adj_mat_to_nalgebra_mat(g: Graph<(usize, usize), (usize, usize)>, rows: usize, cols: usize) -> DMat<f64> {
-        let mut m2 : DMat<f64> = DMat::new_zeros(rows, cols);
+    fn convert_graph_adj_mat_to_nalgebra_mat(g: Graph<(usize, usize), (usize, usize)>, rows: usize, cols: usize) -> DMatrix<f64> {
+        let mut m2 = DMatrix::from_element(rows, cols, 0.0);
         let count = rows * rows;
         let mut node_count = 0;
 
@@ -448,7 +448,7 @@ impl<'a> TheWorld<'a> {
 
         let dgs_and_nidxs: Vec<(GridCell, NodeIndex)> = dgs.clone().into_iter().map(|dg| (dg.clone(), neighbors_graph.add_node((dg.i, dg.j)))).collect();
 
-        for two_dgs_and_nidxs in dgs_and_nidxs.clone().into_iter().combinations_n(2) {
+        for two_dgs_and_nidxs in dgs_and_nidxs.clone().into_iter().combinations(2) {
 
             let dg1 = two_dgs_and_nidxs[0].0.clone();
             let dg2 = two_dgs_and_nidxs[1].0.clone();
@@ -594,8 +594,11 @@ impl<'a> TheWorld<'a> {
 
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        for (key, group) in with_idxs.iter().group_by(|gd| (gd.i, gd.j)) {
-            let the_vec_of_vals: Vec<f64> = group.iter().map(|t| t.v).collect();
+        let grouped_stuff = &with_idxs.into_iter().group_by(|gd| (gd.i, gd.j));
+
+
+        for (key, group) in grouped_stuff {
+            let the_vec_of_vals: Vec<f64> = group.into_iter().map(|t| t.v).collect();
             let mut some_default_dg = GridCell {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal};
             let teh_dg: &mut GridCell = &mut self.get_by_idx(key);
             let update_dg_result = teh_dg.update(t, the_vec_of_vals);
