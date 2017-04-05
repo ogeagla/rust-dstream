@@ -19,7 +19,6 @@ mod test;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cluster<'a> {
-
     //TODO FIXME a Vec of refs doesnt seem right?
     dgs: Vec<&'a GridCell<'a>>,
 }
@@ -65,12 +64,14 @@ pub struct GridPoint {
     t: u32,
     v: f64,
 }
+
 #[derive(Clone)]
 pub struct GridData {
     i: usize,
     j: usize,
     v: f64,
 }
+
 pub struct TheWorld<'a> {
     clusters: Vec<Cluster<'a>>,
     grid_cells: Vec<GridCell<'a>>,
@@ -101,19 +102,23 @@ impl Runner {
     pub fn run_world() {
         let props: DStreamProps = DStreamProps { ..Default::default() };
 
-        let default_vec : Vec<GridPoint> = Vec::new();
-        let mut world = TheWorld{grid_cells: Vec::new(), timeline: Vec::new(), 
-            current_time: 0, clusters: Vec::new(), previous_grid_cells: Vec::new(), };
+        let default_vec: Vec<GridPoint> = Vec::new();
+        let mut world = TheWorld {
+            grid_cells: Vec::new(),
+            timeline: Vec::new(),
+            current_time: 0,
+            clusters: Vec::new(),
+            previous_grid_cells: Vec::new(),
+        };
         world.init(default_vec);
 
         let mut has_initialized = false;
         for t in 0..11 {
-
             let r_x = rand::random::<f64>();
             let r_y = rand::random::<f64>();
             let v = rand::random::<f64>();
 
-            let rd_1 = RawData { x: r_x, y: r_y, v: v};
+            let rd_1 = RawData { x: r_x, y: r_y, v: v };
             println!("putting rand raw data: ({}, {}) -> {}", r_x, r_y, v);
             let res = world.put(t, vec!(rd_1));
 
@@ -132,7 +137,6 @@ impl Runner {
 }
 
 impl<'a> TheWorld<'a> {
-
     fn pretty_print_dmat(dmat: DMatrix<f64>) {
         for r in 0..dmat.nrows() {
             for c in 0..dmat.ncols() {
@@ -174,7 +178,6 @@ impl<'a> TheWorld<'a> {
     }
 
     fn which_labels_changed_between(labels1: HashMap<(usize, usize), GridLabel>, labels2: HashMap<(usize, usize), GridLabel>) -> Option<Vec<(usize, usize)>> {
-
         let mut keys_set1 = HashSet::new();
         for (k, v) in labels1.clone() {
             keys_set1.insert(k);
@@ -219,17 +222,16 @@ impl<'a> TheWorld<'a> {
     }
 
     pub fn adjust_clustering(&mut self) -> Result<(), String> {
-
-        /*
-        pub struct TheWorld<'a> {
-            clusters: Vec<Cluster<'a>>,
-            grid_cells: Vec<GridCell<'a>>,
-            timeline: Vec<u32>,
-            current_time: u32,
-        }
-        */
+//        pub struct TheWorld<'a> {
+//            clusters: Vec<Cluster<'a>>,
+//            grid_cells: Vec<GridCell<'a>>,
+//            previous_grid_cells: Vec<GridCell<'a>>,
+//            timeline: Vec<u32>,
+//            current_time: u32,
+//        }
 
         fn dgs_with_changed_labels_since_last_time<'b>() -> Vec<GridCell<'b>> {
+
             //TODO
             Vec::new()
         }
@@ -251,8 +253,12 @@ impl<'a> TheWorld<'a> {
 
         fn get_neighboring_dg_with_largest_cluster(ref_dg: GridCell) -> GridCell {
             //TODO
-            GridCell {i: 1, j: 1, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal}
+            GridCell { i: 1, j: 1, updates_and_vals: Vec::new(), removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal }
         }
+
+
+        //TODO adjust these grid cells
+        let new_grids = self.grid_cells.clone();
 
         for g in dgs_with_changed_labels_since_last_time() {
             match g.get_grid_label_at_time(self.current_time) {
@@ -260,7 +266,7 @@ impl<'a> TheWorld<'a> {
                     //TODO
                     //remove g from its cluster
                     //label g as NoClass
-                    let c = Cluster { dgs: Vec::new(), };
+                    let c = Cluster { dgs: Vec::new() };
 
                     if is_no_longer_fully_connected(c) {
                         //split c into 2 clusters
@@ -269,18 +275,17 @@ impl<'a> TheWorld<'a> {
                 GridLabel::Dense => {
                     let h = get_neighboring_dg_with_largest_cluster(g.clone());
                     match h.get_grid_label_at_time(self.current_time) {
-                        GridLabel::Dense => {
-
-                        },
-                        GridLabel::Transitional => {
-
-                        },
+                        GridLabel::Dense => {},
+                        GridLabel::Transitional => {},
                         _ => (),
                     }
                 },
                 _ => (),
             }
         }
+
+        self.previous_grid_cells = self.grid_cells.clone();
+        self.grid_cells = new_grids;
 
         //update the density of all grids in grid_list
         /*
@@ -311,13 +316,13 @@ impl<'a> TheWorld<'a> {
 
     pub fn initialize_clustering(&mut self) -> Result<(), String> {
         fn single_init_iteration(cs: Vec<Vec<((usize, usize), GridCell)>>, t: u32) -> Vec<Vec<((usize, usize), GridCell)>> {
-
-            let all_g: Vec<((usize, usize), GridCell)> = cs.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
+            let all_g: Vec<((usize, usize), GridCell)> = cs.clone().into_iter().fold(Vec::new(), |mut acc, x| {
+                acc.extend(x);
+                acc
+            });
 
             for c in cs.clone() {
-
                 for g in c.clone() {
-
                     if TheWorld::is_inside_grid(g.clone().1, c.clone().into_iter().map(|dg| dg.1).collect()) {
                         //not outside grid
                     } else {
@@ -351,13 +356,14 @@ impl<'a> TheWorld<'a> {
 
         let mut clusters: Vec<Vec<GridCell>> = self.grid_cells.clone().into_iter().map(|dg| vec!(dg)).collect();
 
-        let all_g: Vec<GridCell> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| { acc.extend(x); acc });
+        let all_g: Vec<GridCell> = clusters.clone().into_iter().fold(Vec::new(), |mut acc, x| {
+            acc.extend(x);
+            acc
+        });
 
         let mut init_labels = TheWorld::get_labels_for_time(self.current_time, all_g);
 
-        while TheWorld::labels_changed_between(init_labels.clone(), init_labels.clone()) {
-
-        }
+        while TheWorld::labels_changed_between(init_labels.clone(), init_labels.clone()) {}
 
         //update density of all grids in grid_list
         //assign each dense grid to a distinct cluster
@@ -404,13 +410,13 @@ impl<'a> TheWorld<'a> {
             for n2 in g.node_indices() {
                 node_count += 1;
                 let idx_2 = n2.index();
-                if ! neighs_v.contains(&n2) {
-                    (&mut m2)[(idx_1,idx_2)] = 0.0;
+                if !neighs_v.contains(&n2) {
+                    (&mut m2)[(idx_1, idx_2)] = 0.0;
                 } else {
-                    (&mut m2)[(idx_1,idx_2)] = 1.0;
+                    (&mut m2)[(idx_1, idx_2)] = 1.0;
                 }
                 if idx_1 == idx_2 {
-                    (&mut m2)[(idx_1,idx_2)] = 1.0;
+                    (&mut m2)[(idx_1, idx_2)] = 1.0;
                 }
             }
         }
@@ -436,20 +442,19 @@ impl<'a> TheWorld<'a> {
 
         let mut dmat_powered = dmat.clone();
 
-        for d in 0..(dim-1) {
+        for d in 0..(dim - 1) {
             dmat_powered = dmat_powered.clone() * dmat.clone();
         }
         TheWorld::pretty_print_dmat(dmat_powered.clone());
         TheWorld::dmat_represents_fully_connected(dmat_powered)
     }
 
-    fn dgs_to_graph(dgs: Vec<GridCell>) ->  Graph<(usize, usize), (usize, usize)> {
+    fn dgs_to_graph(dgs: Vec<GridCell>) -> Graph<(usize, usize), (usize, usize)> {
         let mut neighbors_graph = Graph::<(usize, usize), (usize, usize)>::new();
 
         let dgs_and_nidxs: Vec<(GridCell, NodeIndex)> = dgs.clone().into_iter().map(|dg| (dg.clone(), neighbors_graph.add_node((dg.i, dg.j)))).collect();
 
         for two_dgs_and_nidxs in dgs_and_nidxs.clone().into_iter().combinations(2) {
-
             let dg1 = two_dgs_and_nidxs[0].0.clone();
             let dg2 = two_dgs_and_nidxs[1].0.clone();
             let idx1 = two_dgs_and_nidxs[0].1;
@@ -546,8 +551,15 @@ impl<'a> TheWorld<'a> {
         for i in 0..props.i_bins {
             for j in 0..props.j_bins {
                 let z_clone = def_bucket.clone();
-                let some_default_dg = GridCell {i: i, j: j,
-                    updates_and_vals: z_clone, removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal};
+                let some_default_dg = GridCell {
+                    i: i,
+                    j: j,
+                    updates_and_vals: z_clone,
+                    removed_as_spore_adic: Vec::new(),
+                    cluster: None,
+                    label: GridLabel::Sparse,
+                    status: GridStatus::Normal
+                };
                 (self.grid_cells).push(some_default_dg);
             }
         }
@@ -555,8 +567,8 @@ impl<'a> TheWorld<'a> {
     fn do_time_steps() {}
     fn do_one_time_step(t: u32, data: Vec<RawData>) {}
 
-    fn get_by_idx(&mut self, idx: (usize, usize))-> GridCell<'a> {
-        let  vec_f: Vec<GridCell> = self.grid_cells.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
+    fn get_by_idx(&mut self, idx: (usize, usize)) -> GridCell<'a> {
+        let vec_f: Vec<GridCell> = self.grid_cells.clone().into_iter().filter(|i| (i.i, i.j) == idx).collect();
         vec_f[0].clone()
     }
     fn update_by_idx(&mut self, idx: (usize, usize), dg: GridCell<'a>) -> Result<(), String> {
@@ -565,9 +577,8 @@ impl<'a> TheWorld<'a> {
         Ok(())
     }
     pub fn put(&mut self, t: u32, dat: Vec<RawData>) -> Result<(), String> {
-
         self.current_time = t;
-        if ! self.timeline.contains(&t) {
+        if !self.timeline.contains(&t) {
             self.timeline.push(t);
         } else {
             return Err(String::from("time has already been put"));
@@ -576,10 +587,9 @@ impl<'a> TheWorld<'a> {
         fn validate_range(loc2d: (f64, f64)) -> bool {
             let props: DStreamProps = DStreamProps { ..Default::default() };
             if (loc2d.0 <= props.i_range.1) &&
-               (loc2d.0 >= props.i_range.0) &&
-               (loc2d.1 <= props.j_range.1) &&
-               (loc2d.1 >= props.j_range.0) {
-            } else {
+                (loc2d.0 >= props.i_range.0) &&
+                (loc2d.1 <= props.j_range.1) &&
+                (loc2d.1 >= props.j_range.0) {} else {
                 println!("invalid! -- bad input range");
                 return false
             }
@@ -599,7 +609,7 @@ impl<'a> TheWorld<'a> {
 
         for (key, group) in grouped_stuff {
             let the_vec_of_vals: Vec<f64> = group.into_iter().map(|t| t.v).collect();
-            let mut some_default_dg = GridCell {i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal};
+            let mut some_default_dg = GridCell { i: key.0, j: key.1, updates_and_vals: Vec::<GridPoint>::new(), removed_as_spore_adic: Vec::new(), cluster: None, label: GridLabel::Sparse, status: GridStatus::Normal };
             let teh_dg: &mut GridCell = &mut self.get_by_idx(key);
             let update_dg_result = teh_dg.update(t, the_vec_of_vals);
             let udpate_world_result = self.update_by_idx(key, teh_dg.clone());
@@ -608,18 +618,17 @@ impl<'a> TheWorld<'a> {
     }
     fn which_idxs(&self, dat: &RawData) -> Result<GridData, String> {
         let props: DStreamProps = DStreamProps { ..Default::default() };
-        let idxs = TheWorld::compute_grid_indxs((dat.x, dat.y), props.i_range, props.j_range,props.i_bins, props.j_bins).unwrap();
-        Ok((GridData{i:idxs.0,j:idxs.1,v:dat.v}))
+        let idxs = TheWorld::compute_grid_indxs((dat.x, dat.y), props.i_range, props.j_range, props.i_bins, props.j_bins).unwrap();
+        Ok((GridData { i: idxs.0, j: idxs.1, v: dat.v }))
     }
 
     fn get_neighbors(the_dg: GridCell<'a>, other_dgs: Vec<GridCell<'a>>) -> Vec<GridCell<'a>> {
-        other_dgs.clone().into_iter().filter( |dg| TheWorld::are_neighbors(&dg, &the_dg) ).collect()
+        other_dgs.clone().into_iter().filter(|dg| TheWorld::are_neighbors(&dg, &the_dg)).collect()
     }
 }
 
 impl<'a> GridCell<'a> {
-
-    pub fn is_sporadic (&self, t: u32) -> bool {
+    pub fn is_sporadic(&self, t: u32) -> bool {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let last_update_t_and_v = self.get_last_update_and_value_to(t);
         let d_t = self.get_at_time(t).1;
@@ -635,7 +644,7 @@ impl<'a> GridCell<'a> {
             _ => false
         }
     }
-    pub fn get_grid_label_at_time(&self, t:u32) -> GridLabel {
+    pub fn get_grid_label_at_time(&self, t: u32) -> GridLabel {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         let n_size = (self.i * self.j) as f64;
         let d_m = props.c_m / (n_size * (1.0 - props.lambda));
@@ -657,7 +666,7 @@ impl<'a> GridCell<'a> {
     }
     pub fn update(&mut self, t: u32, vals: Vec<f64>) -> Result<(), String> {
         let sum = vals.clone().iter().fold(0.0, |sum, x| sum + x);
-        self.updates_and_vals.push(GridPoint {t: t, v: sum});
+        self.updates_and_vals.push(GridPoint { t: t, v: sum });
         Ok(())
     }
     pub fn get_last_update_and_value_to(&self, t: u32) -> (u32, f64) {
@@ -674,4 +683,4 @@ impl<'a> GridCell<'a> {
         let props: DStreamProps = DStreamProps { ..Default::default() };
         props.lambda.powf((t_n - t_l) as f64)
     }
- }
+}

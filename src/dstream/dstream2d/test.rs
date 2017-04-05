@@ -1,6 +1,7 @@
 extern crate nalgebra as na;
 
 use dstream::dstream2d::*;
+use dstream::dstreamn::*;
 use na::*;
 use petgraph::{Graph};
 use petgraph::graph::NodeIndex;
@@ -18,6 +19,14 @@ fn pretty_print_dmat(dmat: DMatrix<f64>) {
     }
     println!("");
 }
+
+#[test]
+fn dstreamn () {
+    println!("****** DSTREAMN START");
+    do_stuff();
+    println!("****** DSTREAMN END");
+}
+
 
 #[test]
 fn test_graph_connected() {
@@ -209,8 +218,9 @@ fn test_put_time_updates_work() {
 
 #[test]
 fn runs() {
-
+    println!("Testing the world...");
     Runner::run_world();
+    println!("Testing the world complete.");
 }
 
 #[test]
